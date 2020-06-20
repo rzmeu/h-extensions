@@ -1,7 +1,6 @@
 import { Source } from "../sources/Source"
 import cheerio from 'cheerio'
 import { APIWrapper } from "../API"
-import { MangaFox } from "../sources/MangaFox/MangaFox";
 import { ManhwaEighteen } from "../sources/ManhwaEighteen/ManhwaEighteen";
 
 describe('ManhwaEighteen Tests', function () {

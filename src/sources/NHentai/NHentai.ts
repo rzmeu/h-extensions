@@ -7,7 +7,6 @@ import { Request } from '../../models/RequestObject/RequestObject'
 import { ChapterDetails } from '../../models/ChapterDetails/ChapterDetails'
 import { Tag, TagSection } from '../../models/TagSection/TagSection'
 import { HomeSection, HomeSectionRequest } from '../../models/HomeSection/HomeSection'
-import { APIWrapper } from '../../API'
 import { LanguageCode } from '../../models/Languages/Languages'
 
 const NHENTAI_DOMAIN = 'https://nhentai.net'

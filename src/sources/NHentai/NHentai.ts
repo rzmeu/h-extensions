@@ -16,7 +16,7 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.4' }
+  get version(): string { return '0.7.5' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -59,6 +59,9 @@ export class NHentai extends Source {
     let tagSections: TagSection[] = [createTagSection({ id: '0', label: 'tag', tags: [] })]
     let tags = $('meta[name="twitter:description"]').attr('content')?.split(",") ?? []
     tagSections[0].tags = tags.map((elem: string) => createTag({id: elem.trim(), label: elem.trim()}))
+
+    // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+    title.replace(/(\[.+?\])/g, "")
 
     // Grab the alternative titles
     let titles = [title]

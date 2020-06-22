@@ -16,7 +16,7 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.4' }
+  get version(): string { return '0.7.5' }
   get name(): string { return 'nHentai (Country-Proof)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -53,6 +53,9 @@ export class NHentaiRedirected extends Source {
     let info = $('[itemprop=name]')
     let image = $('[itemprop=image]').attr('content') ?? ''
     let title = $('[itemprop=name]').attr('content') ?? ''
+
+    // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+    title.replace(/(\[.+?\])/g, "")
 
     // Comma seperate all of the tags and store them in our tag section 
     let tagSections: TagSection[] = [createTagSection({ id: '0', label: 'tag', tags: [] })]

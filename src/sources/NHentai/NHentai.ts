@@ -16,7 +16,7 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.5' }
+  get version(): string { return '0.7.6' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -61,7 +61,7 @@ export class NHentai extends Source {
     tagSections[0].tags = tags.map((elem: string) => createTag({id: elem.trim(), label: elem.trim()}))
 
     // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
-    title.replace(/(\[.+?\])/g, "")
+    title = title.replace(/(\[.+?\])/g, "").trim()
 
     // Grab the alternative titles
     let titles = [title]
@@ -129,6 +129,9 @@ export class NHentai extends Source {
     // NHentai is unique, where there is only ever one chapter.
     let title = $('[itemprop=name]').attr('content') ?? ''
     let time = new Date($('time').attr('datetime') ?? '')
+
+    // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+    title = title.replace(/(\[.+?\])/g, "").trim()
 
     // Get the correct language code
     let language = ''
@@ -268,9 +271,14 @@ export class NHentai extends Source {
 
       let mangaId = parseInt(href?.match(/g\/(\d*)\/\d/)![1]!)
 
+      let title = $('[itemprop=name]').attr('content') ?? ''
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      title = title.replace(/(\[.+?\])/g, "").trim()
+
       mangaTiles.push(createMangaTile({
         id: mangaId.toString(),
-        title: createIconText({ text: $('[itemprop=name]').attr('content') ?? '' }),
+        title: createIconText({ text: title),
         image: $('[itemprop=image]').attr('content') ?? ''
       }))
       return mangaTiles
@@ -289,6 +297,9 @@ export class NHentai extends Source {
 
       let title = $('.caption', currNode).text()
       let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      title = title.replace(/(\[.+?\])/g, "").trim()
 
       mangaTiles.push(createMangaTile({
         id: idHref[1],
@@ -359,7 +370,10 @@ export class NHentai extends Source {
         image = 'http:' + $('img', currNode).attr('src')!
       }
 
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
       let title = $('.caption', currNode).text()
+      title = title.replace(/(\[.+?\])/g, "").trim()
+
       let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
 
       updatedHentai.push(createMangaTile({

@@ -16,7 +16,7 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.5' }
+  get version(): string { return '0.7.6' }
   get name(): string { return 'nHentai (Country-Proof)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -55,7 +55,7 @@ export class NHentaiRedirected extends Source {
     let title = $('[itemprop=name]').attr('content') ?? ''
 
     // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
-    title.replace(/(\[.+?\])/g, "")
+    title = title.replace(/(\[.+?\])/g, "").trim()
 
     // Comma seperate all of the tags and store them in our tag section 
     let tagSections: TagSection[] = [createTagSection({ id: '0', label: 'tag', tags: [] })]
@@ -149,6 +149,9 @@ export class NHentaiRedirected extends Source {
         }
       }
     }
+
+    // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+    title = title.replace(/(\[.+?\])/g, "").trim()
 
     chapters.push(createChapter({
       id: "1",                                    // Only ever one chapter on this source
@@ -271,10 +274,14 @@ export class NHentaiRedirected extends Source {
       let href = $('a', contextNode).attr('href')
 
       let mangaId = parseInt(href?.match(/g\/(\d*)\/\d/)![1]!)
+      let title = $('[itemprop=name]').attr('content') ?? ''
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      title = title.replace(/(\[.+?\])/g, "").trim()
 
       mangaTiles.push(createMangaTile({
         id: mangaId.toString(),
-        title: createIconText({ text: $('[itemprop=name]').attr('content') ?? '' }),
+        title: createIconText({ text: title }),
         image: $('[itemprop=image]').attr('content') ?? ''
       }))
       return mangaTiles
@@ -292,6 +299,10 @@ export class NHentaiRedirected extends Source {
 
 
       let title = $('.caption', currNode).text()
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      title = title.replace(/(\[.+?\])/g, "").trim()
+
       let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
 
       mangaTiles.push(createMangaTile({
@@ -364,6 +375,10 @@ export class NHentaiRedirected extends Source {
       }
 
       let title = $('.caption', currNode).text()
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      title = title.replace(/(\[.+?\])/g, "").trim()
+
       let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
 
       updatedHentai.push(createMangaTile({

@@ -55,7 +55,7 @@ class NHentaiRedirected extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.5'; }
+    get version() { return '0.7.7'; }
     get name() { return 'nHentai (Country-Proof)'; }
     get description() { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }
@@ -91,7 +91,7 @@ class NHentaiRedirected extends Source_1.Source {
         let image = (_a = $('[itemprop=image]').attr('content')) !== null && _a !== void 0 ? _a : '';
         let title = (_b = $('[itemprop=name]').attr('content')) !== null && _b !== void 0 ? _b : '';
         // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
-        title.replace(/(\[.+?\])/g, "");
+        title = title.replace(/(\[.+?\])/g, "").trim();
         // Comma seperate all of the tags and store them in our tag section 
         let tagSections = [createTagSection({ id: '0', label: 'tag', tags: [] })];
         let tags = (_d = (_c = $('meta[name="twitter:description"]').attr('content')) === null || _c === void 0 ? void 0 : _c.split(",")) !== null && _d !== void 0 ? _d : [];
@@ -177,6 +177,8 @@ class NHentaiRedirected extends Source_1.Source {
                 }
             }
         }
+        // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+        title = title.replace(/(\[.+?\])/g, "").trim();
         chapters.push(createChapter({
             id: "1",
             mangaId: metadata.id,
@@ -277,9 +279,12 @@ class NHentaiRedirected extends Source_1.Source {
             let contextNode = $('#bigcontainer');
             let href = $('a', contextNode).attr('href');
             let mangaId = parseInt((href === null || href === void 0 ? void 0 : href.match(/g\/(\d*)\/\d/))[1]);
+            let title = (_a = $('[itemprop=name]').attr('content')) !== null && _a !== void 0 ? _a : '';
+            // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+            title = title.replace(/(\[.+?\])/g, "").trim();
             mangaTiles.push(createMangaTile({
                 id: mangaId.toString(),
-                title: createIconText({ text: (_a = $('[itemprop=name]').attr('content')) !== null && _a !== void 0 ? _a : '' }),
+                title: createIconText({ text: title }),
                 image: (_b = $('[itemprop=image]').attr('content')) !== null && _b !== void 0 ? _b : ''
             }));
             return mangaTiles;
@@ -293,6 +298,8 @@ class NHentaiRedirected extends Source_1.Source {
                 image = 'http:' + $('img', currNode).attr('src');
             }
             let title = $('.caption', currNode).text();
+            // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+            title = title.replace(/(\[.+?\])/g, "").trim();
             let idHref = (_c = $('a', currNode).attr('href')) === null || _c === void 0 ? void 0 : _c.match(/\/(\d*)\//);
             mangaTiles.push(createMangaTile({
                 id: idHref[1],
@@ -350,6 +357,8 @@ class NHentaiRedirected extends Source_1.Source {
                 image = 'http:' + $('img', currNode).attr('src');
             }
             let title = $('.caption', currNode).text();
+            // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+            title = title.replace(/(\[.+?\])/g, "").trim();
             let idHref = (_a = $('a', currNode).attr('href')) === null || _a === void 0 ? void 0 : _a.match(/\/(\d*)\//);
             updatedHentai.push(createMangaTile({
                 id: idHref[1],

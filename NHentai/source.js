@@ -55,7 +55,7 @@ class NHentai extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.4'; }
+    get version() { return '0.7.5'; }
     get name() { return 'nHentai'; }
     get description() { return 'Extension that pulls manga from nHentai'; }
     get author() { return 'Conrad Weiser'; }
@@ -94,6 +94,8 @@ class NHentai extends Source_1.Source {
         let tagSections = [createTagSection({ id: '0', label: 'tag', tags: [] })];
         let tags = (_d = (_c = $('meta[name="twitter:description"]').attr('content')) === null || _c === void 0 ? void 0 : _c.split(",")) !== null && _d !== void 0 ? _d : [];
         tagSections[0].tags = tags.map((elem) => createTag({ id: elem.trim(), label: elem.trim() }));
+        // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+        title.replace(/(\[.+?\])/g, "");
         // Grab the alternative titles
         let titles = [title];
         let altTitleBlock = $('#info');

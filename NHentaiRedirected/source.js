@@ -55,7 +55,7 @@ class NHentaiRedirected extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.4'; }
+    get version() { return '0.7.5'; }
     get name() { return 'nHentai (Country-Proof)'; }
     get description() { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }
@@ -90,6 +90,8 @@ class NHentaiRedirected extends Source_1.Source {
         let info = $('[itemprop=name]');
         let image = (_a = $('[itemprop=image]').attr('content')) !== null && _a !== void 0 ? _a : '';
         let title = (_b = $('[itemprop=name]').attr('content')) !== null && _b !== void 0 ? _b : '';
+        // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+        title.replace(/(\[.+?\])/g, "");
         // Comma seperate all of the tags and store them in our tag section 
         let tagSections = [createTagSection({ id: '0', label: 'tag', tags: [] })];
         let tags = (_d = (_c = $('meta[name="twitter:description"]').attr('content')) === null || _c === void 0 ? void 0 : _c.split(",")) !== null && _d !== void 0 ? _d : [];

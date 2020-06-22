@@ -55,7 +55,7 @@ class NHentai extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.7'; }
+    get version() { return '0.8.0'; }
     get name() { return 'nHentai'; }
     get description() { return 'Extension that pulls manga from nHentai'; }
     get author() { return 'Conrad Weiser'; }

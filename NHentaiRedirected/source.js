@@ -55,7 +55,7 @@ class NHentaiRedirected extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.7'; }
+    get version() { return '0.8.0'; }
     get name() { return 'nHentai (Country-Proof)'; }
     get description() { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }

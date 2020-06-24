@@ -16,7 +16,7 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.0' }
+  get version(): string { return '0.8.1' }
   get name(): string { return 'nHentai (Country-Proof)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -24,15 +24,6 @@ export class NHentaiRedirected extends Source {
   get icon(): string { return "logo.png" }
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `${NHENTAI_DOMAIN}/g/${mangaId}`}
-
-  convertLanguageToCode(language: string) {
-    switch (language.toLowerCase()) {
-      case "english": return LanguageCode.ENGLISH
-      case "japanese": return LanguageCode.JAPANESE
-      case "chinese": return LanguageCode.CHINEESE
-      default: return LanguageCode.UNKNOWN
-    }
-  }
 
   getMangaDetailsRequest(ids: string[]): Request[] {
     let requests: Request[] = []
@@ -135,17 +126,22 @@ export class NHentaiRedirected extends Source {
     let time = new Date($('time').attr('datetime') ?? '')
 
     // Get the correct language code
-    let language = ''
+    let language: LanguageCode = LanguageCode.UNKNOWN
     for (let item of $('.tag-container').toArray()) {
       if ($(item).text().indexOf("Languages") > -1) {
-        let temp = $("a", item)
-        if (temp.toArray().length > 1) {
-          let temptext = $(temp.toArray()[1]).text()
-          language = temptext.substring(0, temptext.indexOf(" ("))
+        let langs = $('span', item).text()
+        
+        if(langs.includes("japanese")) {
+          language = LanguageCode.JAPANESE
+           break
         }
-        else {
-          let temptext = temp.text()
-          language = temptext.substring(0, temptext.indexOf(" ("))
+        else if(langs.includes("english")) {
+          language = LanguageCode.ENGLISH
+          break
+        }
+        else if(langs.includes("chinese")) {
+          language = LanguageCode.CHINEESE
+          break
         }
       }
     }
@@ -159,7 +155,7 @@ export class NHentaiRedirected extends Source {
       name: title,
       chapNum: 1,
       time: time,
-      langCode: this.convertLanguageToCode(language),
+      langCode: language,
     }))
     return chapters
   }

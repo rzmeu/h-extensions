@@ -55,7 +55,7 @@ class NHentaiRedirected extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.8.0'; }
+    get version() { return '0.8.1'; }
     get name() { return 'nHentai (Country-Proof)'; }
     get description() { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }
@@ -63,14 +63,6 @@ class NHentaiRedirected extends Source_1.Source {
     get icon() { return "logo.png"; }
     get hentaiSource() { return true; }
     getMangaShareUrl(mangaId) { return `${NHENTAI_DOMAIN}/g/${mangaId}`; }
-    convertLanguageToCode(language) {
-        switch (language.toLowerCase()) {
-            case "english": return Languages_1.LanguageCode.ENGLISH;
-            case "japanese": return Languages_1.LanguageCode.JAPANESE;
-            case "chinese": return Languages_1.LanguageCode.CHINEESE;
-            default: return Languages_1.LanguageCode.UNKNOWN;
-        }
-    }
     getMangaDetailsRequest(ids) {
         let requests = [];
         for (let id of ids) {
@@ -163,17 +155,21 @@ class NHentaiRedirected extends Source_1.Source {
         let title = (_a = $('[itemprop=name]').attr('content')) !== null && _a !== void 0 ? _a : '';
         let time = new Date((_b = $('time').attr('datetime')) !== null && _b !== void 0 ? _b : '');
         // Get the correct language code
-        let language = '';
+        let language = Languages_1.LanguageCode.UNKNOWN;
         for (let item of $('.tag-container').toArray()) {
             if ($(item).text().indexOf("Languages") > -1) {
-                let temp = $("a", item);
-                if (temp.toArray().length > 1) {
-                    let temptext = $(temp.toArray()[1]).text();
-                    language = temptext.substring(0, temptext.indexOf(" ("));
+                let langs = $('span', item).text();
+                if (langs.includes("japanese")) {
+                    language = Languages_1.LanguageCode.JAPANESE;
+                    break;
                 }
-                else {
-                    let temptext = temp.text();
-                    language = temptext.substring(0, temptext.indexOf(" ("));
+                else if (langs.includes("english")) {
+                    language = Languages_1.LanguageCode.ENGLISH;
+                    break;
+                }
+                else if (langs.includes("chinese")) {
+                    language = Languages_1.LanguageCode.CHINEESE;
+                    break;
                 }
             }
         }
@@ -185,7 +181,7 @@ class NHentaiRedirected extends Source_1.Source {
             name: title,
             chapNum: 1,
             time: time,
-            langCode: this.convertLanguageToCode(language),
+            langCode: language,
         }));
         return chapters;
     }

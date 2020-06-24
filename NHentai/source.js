@@ -55,7 +55,7 @@ class NHentai extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.8.0'; }
+    get version() { return '0.8.1'; }
     get name() { return 'nHentai'; }
     get description() { return 'Extension that pulls manga from nHentai'; }
     get author() { return 'Conrad Weiser'; }
@@ -160,17 +160,21 @@ class NHentai extends Source_1.Source {
         // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
         title = title.replace(/(\[.+?\])/g, "").trim();
         // Get the correct language code
-        let language = '';
+        let language = Languages_1.LanguageCode.UNKNOWN;
         for (let item of $('.tag-container').toArray()) {
             if ($(item).text().indexOf("Languages") > -1) {
-                let temp = $("a", item);
-                if (temp.toArray().length > 1) {
-                    let temptext = $(temp.toArray()[1]).text();
-                    language = temptext.substring(0, temptext.indexOf(" ("));
+                let langs = $('span', item).text();
+                if (langs.includes("japanese")) {
+                    language = Languages_1.LanguageCode.JAPANESE;
+                    break;
                 }
-                else {
-                    let temptext = temp.text();
-                    language = temptext.substring(0, temptext.indexOf(" ("));
+                else if (langs.includes("english")) {
+                    language = Languages_1.LanguageCode.ENGLISH;
+                    break;
+                }
+                else if (langs.includes("chinese")) {
+                    language = Languages_1.LanguageCode.CHINEESE;
+                    break;
                 }
             }
         }
@@ -180,7 +184,7 @@ class NHentai extends Source_1.Source {
             name: title,
             chapNum: 1,
             time: time,
-            langCode: this.convertLanguageToCode(language),
+            langCode: language,
         }));
         return chapters;
     }

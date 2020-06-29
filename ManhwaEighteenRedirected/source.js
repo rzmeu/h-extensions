@@ -65,7 +65,7 @@ class ManhwaEighteenRedirected extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.6.4'; }
+    get version() { return '0.6.5'; }
     get name() { return 'Manhwa18 (Country-Proof) (18+)'; }
     get description() { return 'Manhwa18 source which is guarinteed to work in countries the website is normally blocked. May be a tad slower than the original source'; }
     get author() { return 'Conrad Weiser'; }
@@ -266,7 +266,7 @@ class ManhwaEighteenRedirected extends Source_1.Source {
             let textContext = $('.media-body', $(obj));
             let primaryText = createIconText({ text: $('span', textContext).text() });
             // The redirector does something weird with the image link, make it right here
-            img = img.replace("/me/me/site", "/me");
+            img = img.replace("/me/me/site", "");
             id = id.replace(".html", "");
             mangaTiles.push(createMangaTile({
                 title: createIconText({ text: title }),

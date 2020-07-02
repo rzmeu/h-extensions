@@ -16,7 +16,7 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.1' }
+  get version(): string { return '0.8.2' }
   get name(): string { return 'nHentai (Country-Proof)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -184,7 +184,7 @@ export class NHentaiRedirected extends Source {
     let galleryId = parseInt(gallerySrc?.match(/.*\/(\d*)\//)![1]!)
 
     // Grab the image thumbnail, so we can determine whether this gallery uses PNG or JPG images
-    let imageType = $('[itemprop=image]').attr('content')?.match(/cover.([png|jpg]*)/)![1]
+    let imageType = $($('img', '.thumb-container')).attr('data-src')?.match(/\.([png|jpg]{3,3})/g)![0]
 
 
     /**
@@ -195,7 +195,7 @@ export class NHentaiRedirected extends Source {
      */
 
     for (let i = 1; i <= numChapters; i++) {
-      pages.push(`${NHENTAI_DOMAIN}/galleries/${galleryId}/${i}.${imageType}`)
+      pages.push(`${NHENTAI_DOMAIN}/galleries/${galleryId}/${i}${imageType}`)
     }
 
     let chapterDetails = createChapterDetails({

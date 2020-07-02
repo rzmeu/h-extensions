@@ -55,7 +55,7 @@ class NHentai extends Source_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.8.1'; }
+    get version() { return '0.8.2'; }
     get name() { return 'nHentai'; }
     get description() { return 'Extension that pulls manga from nHentai'; }
     get author() { return 'Conrad Weiser'; }
@@ -208,7 +208,7 @@ class NHentai extends Source_1.Source {
         // We can regular expression match out the gallery ID from this string
         let galleryId = parseInt((gallerySrc === null || gallerySrc === void 0 ? void 0 : gallerySrc.match(/.*\/(\d*)\//))[1]);
         // Grab the image thumbnail, so we can determine whether this gallery uses PNG or JPG images
-        let imageType = ((_a = $('[itemprop=image]').attr('content')) === null || _a === void 0 ? void 0 : _a.match(/cover.([png|jpg]*)/))[1];
+        let imageType = ((_a = $($('img', '.thumb-container')).attr('data-src')) === null || _a === void 0 ? void 0 : _a.match(/\.([png|jpg]{3,3})/g))[0];
         /**
          * N-Hentai always follows the following formats for their pages:
          * https://i.nhentai.net/galleries/43181/10.png
@@ -216,7 +216,7 @@ class NHentai extends Source_1.Source {
          * We have the image types from the thumbnail
          */
         for (let i = 1; i <= numChapters; i++) {
-            pages.push(`https://i.nhentai.net/galleries/${galleryId}/${i}.${imageType}`);
+            pages.push(`https://i.nhentai.net/galleries/${galleryId}/${i}${imageType}`);
         }
         let chapterDetails = createChapterDetails({
             id: metadata.chapterId,

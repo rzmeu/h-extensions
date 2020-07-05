@@ -1,60 +1,180 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Sources = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var LanguageCode;
-(function (LanguageCode) {
-    LanguageCode["UNKNOWN"] = "_unknown";
-    LanguageCode["BENGALI"] = "bd";
-    LanguageCode["BULGARIAN"] = "bg";
-    LanguageCode["BRAZILIAN"] = "br";
-    LanguageCode["CHINEESE"] = "cn";
-    LanguageCode["CZECH"] = "cz";
-    LanguageCode["GERMAN"] = "de";
-    LanguageCode["DANISH"] = "dk";
-    LanguageCode["ENGLISH"] = "gb";
-    LanguageCode["SPANISH"] = "es";
-    LanguageCode["FINNISH"] = "fi";
-    LanguageCode["FRENCH"] = "fr";
-    LanguageCode["WELSH"] = "gb";
-    LanguageCode["GREEK"] = "gr";
-    LanguageCode["CHINEESE_HONGKONG"] = "hk";
-    LanguageCode["HUNGARIAN"] = "hu";
-    LanguageCode["INDONESIAN"] = "id";
-    LanguageCode["ISRELI"] = "il";
-    LanguageCode["INDIAN"] = "in";
-    LanguageCode["IRAN"] = "ir";
-    LanguageCode["ITALIAN"] = "it";
-    LanguageCode["JAPANESE"] = "jp";
-    LanguageCode["KOREAN"] = "kr";
-    LanguageCode["LITHUANIAN"] = "lt";
-    LanguageCode["MONGOLIAN"] = "mn";
-    LanguageCode["MEXIAN"] = "mx";
-    LanguageCode["MALAY"] = "my";
-    LanguageCode["DUTCH"] = "nl";
-    LanguageCode["NORWEGIAN"] = "no";
-    LanguageCode["PHILIPPINE"] = "ph";
-    LanguageCode["POLISH"] = "pl";
-    LanguageCode["PORTUGUESE"] = "pt";
-    LanguageCode["ROMANIAN"] = "ro";
-    LanguageCode["RUSSIAN"] = "ru";
-    LanguageCode["SANSKRIT"] = "sa";
-    LanguageCode["SAMI"] = "si";
-    LanguageCode["THAI"] = "th";
-    LanguageCode["TURKISH"] = "tr";
-    LanguageCode["UKRAINIAN"] = "ua";
-    LanguageCode["VIETNAMESE"] = "vn";
-})(LanguageCode = exports.LanguageCode || (exports.LanguageCode = {}));
+const Source_1 = require("./Source");
+const Manga_1 = require("../models/Manga");
+class Madara extends Source_1.Source {
+    constructor(cheerio) {
+        super(cheerio);
+    }
+    //This is to let Madara sources override selectors without needing to override whole methods
+    get titleSelector() { return 'div.post-title h1'; }
+    get authorSelector() { return 'div.author-content'; }
+    get genresSelector() { return 'div.genres-content a'; }
+    get artistSelector() { return 'div.artist-content'; }
+    get ratingSelector() { return 'span#averagerate'; }
+    get thumbnailSelector() { return 'div.summary_image img'; }
+    get thumbnailAttr() { return 'src'; }
+    get chapterListSelector() { return 'li.wp-manga-chapter'; }
+    get pageListSelector() { return 'div.page-break'; }
+    get pageImageAttr() { return 'src'; }
+    get searchMangaSelector() { return 'div.c-tabs-item__content'; }
+    get searchCoverAttr() { return 'src'; }
+    getMangaDetailsRequest(ids) {
+        let requests = [];
+        for (let id of ids) {
+            let metadata = { 'id': id };
+            requests.push(createRequestObject({
+                url: this.MadaraDomain + "/manga/" + id,
+                metadata: metadata,
+                method: 'GET'
+            }));
+        }
+        return requests;
+    }
+    getMangaDetails(data, metadata) {
+        var _a, _b;
+        let manga = [];
+        let $ = this.cheerio.load(data);
+        let title = $(this.titleSelector).first().children().remove().end().text().trim();
+        let titles = [title];
+        titles.push.apply(titles, $('div.summary-content').eq(2).text().trim().split(", "));
+        let author = $(this.authorSelector).text().trim();
+        let tagSections = [createTagSection({ id: '0', label: 'genres', tags: [] })];
+        for (let genre of $(this.genresSelector).toArray()) {
+            let id = (_b = (_a = $(genre).attr("href")) === null || _a === void 0 ? void 0 : _a.split('/').pop()) !== null && _b !== void 0 ? _b : '';
+            let tag = $(genre).text();
+            tagSections[0].tags.push(createTag({ id: id, label: tag }));
+        }
+        let status = ($("div.summary-content").last().text() == "Completed") ? Manga_1.MangaStatus.COMPLETED : Manga_1.MangaStatus.ONGOING;
+        let averageRating = $(this.ratingSelector).text().trim();
+        let src = $(this.thumbnailSelector).attr(this.thumbnailAttr);
+        //Not sure if that double slash happens with any Madara source, but added just in case
+        src = (src === null || src === void 0 ? void 0 : src.startsWith("http")) ? src : this.MadaraDomain + (src === null || src === void 0 ? void 0 : src.replace("//", ""));
+        let artist = $(this.artistSelector).text().trim();
+        let description = ($("div.description-summary  div.summary__content").find("p").text() != "") ? $("div.description-summary  div.summary__content").find("p").text().replace(/<br>/g, '\n') : $("div.description-summary  div.summary__content").text();
+        return [createManga({
+                id: metadata.id,
+                titles: titles,
+                image: src,
+                avgRating: Number(averageRating),
+                rating: Number(averageRating),
+                author: author,
+                artist: artist,
+                desc: description,
+                status: status,
+                tags: tagSections,
+                langName: this.language,
+                langFlag: this.langFlag
+            })];
+    }
+    getChaptersRequest(mangaId) {
+        let metadata = { 'id': mangaId };
+        return createRequestObject({
+            url: `${this.MadaraDomain}/manga/${mangaId}`,
+            method: "GET",
+            metadata: metadata
+        });
+    }
+    getChapters(data, metadata) {
+        let $ = this.cheerio.load(data);
+        let chapters = [];
+        for (let elem of $(this.chapterListSelector).toArray()) {
+            let name = $(elem).find("a").first().text().trim();
+            let id = /[0-9.]+/.exec(name)[0];
+            let imgDate = $(elem).find("img").attr("alt");
+            let time = (imgDate != undefined) ? this.convertTime(imgDate) : this.parseChapterDate($(elem).find("span.chapter-release-date i").first().text());
+            chapters.push(createChapter({
+                id: id !== null && id !== void 0 ? id : '',
+                chapNum: Number(id),
+                mangaId: metadata.id,
+                name: name,
+                time: time,
+                langCode: this.langCode,
+            }));
+        }
+        return chapters;
+    }
+    parseChapterDate(date) {
+        if (date.toLowerCase().includes("ago")) {
+            return this.convertTime(date);
+        }
+        if (date.toLowerCase().startsWith("yesterday")) {
+            //To start it at the beginning of yesterday, instead of exactly 24 hrs prior to now
+            return new Date((Math.floor(Date.now() / 86400000) * 86400000) - 86400000);
+        }
+        if (date.toLowerCase().startsWith("today")) {
+            return new Date(Math.floor(Date.now() / 86400000) * 8640000);
+        }
+        if (/\d+(st|nd|rd|th)/.test(date)) {
+            let match = /\d+(st|nd|rd|th)/.exec(date)[0];
+            let day = match.replace(/\D/g, "");
+            return new Date(date.replace(match, day));
+        }
+        return new Date(date);
+    }
+    getChapterDetailsRequest(mangaId, chId) {
+        let metadata = { 'mangaId': mangaId, 'chapterId': chId, 'nextPage': false, 'page': 1 };
+        return createRequestObject({
+            url: `${this.MadaraDomain}/manga/${mangaId}/chapter-${chId.replace('.', '-')}`,
+            method: "GET",
+            metadata: metadata
+        });
+    }
+    getChapterDetails(data, metadata) {
+        var _a;
+        let pages = [];
+        let $ = this.cheerio.load(data);
+        let pageElements = $(this.pageListSelector);
+        for (let page of pageElements.toArray()) {
+            pages.push(((_a = $(page)) === null || _a === void 0 ? void 0 : _a.find("img")).first().attr(this.pageImageAttr).trim());
+        }
+        let chapterDetails = createChapterDetails({
+            id: metadata.chapterId,
+            mangaId: metadata.mangaId,
+            pages: pages,
+            longStrip: false
+        });
+        return chapterDetails;
+    }
+    searchRequest(query, page) {
+        var _a;
+        let url = `${this.MadaraDomain}/page/${page}/?`;
+        let author = query.author || '';
+        let artist = query.artist || '';
+        let genres = ((_a = query.includeGenre) !== null && _a !== void 0 ? _a : []).join(",");
+        let paramaters = { "s": query.title, "post_type": "wp-manga", "author": author, "artist": artist, "genres": genres };
+        return createRequestObject({
+            url: url + new URLSearchParams(paramaters).toString(),
+            method: 'GET'
+        });
+    }
+    search(data) {
+        var _a, _b;
+        let $ = this.cheerio.load(data);
+        let mangas = [];
+        for (let manga of $(this.searchMangaSelector).toArray()) {
+            let id = (_b = (_a = $("div.post-title a", manga).attr("href")) === null || _a === void 0 ? void 0 : _a.split("/")[4]) !== null && _b !== void 0 ? _b : '';
+            if (!id.endsWith("novel")) {
+                let cover = $("img", manga).first().attr(this.searchCoverAttr);
+                cover = (cover === null || cover === void 0 ? void 0 : cover.startsWith("http")) ? cover : this.MadaraDomain + (cover === null || cover === void 0 ? void 0 : cover.replace("//", "/"));
+                let title = $("div.post-title a", manga).text();
+                let author = $("div.summary-content > a[href*=manga-author]", manga).text().trim();
+                let alternatives = $("div.summary-content", manga).first().text().trim();
+                mangas.push(createMangaTile({
+                    id: id,
+                    image: cover,
+                    title: createIconText({ text: title !== null && title !== void 0 ? title : '' }),
+                    subtitleText: createIconText({ text: author !== null && author !== void 0 ? author : '' })
+                }));
+            }
+        }
+        return mangas;
+    }
+}
+exports.Madara = Madara;
 
-},{}],2:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-var MangaStatus;
-(function (MangaStatus) {
-    MangaStatus[MangaStatus["ONGOING"] = 1] = "ONGOING";
-    MangaStatus[MangaStatus["COMPLETED"] = 0] = "COMPLETED";
-})(MangaStatus = exports.MangaStatus || (exports.MangaStatus = {}));
-
-},{}],3:[function(require,module,exports){
+},{"../models/Manga":6,"./Source":2}],2:[function(require,module,exports){
 "use strict";
 /**
  * Request objects hold information for a particular source (see sources for example)
@@ -73,6 +193,11 @@ class Source {
      * An optional field that defines the language of the extension's source
      */
     get language() { return 'all'; }
+    /**
+     * An optional field of source tags: Little bits of metadata which is rendered on the website
+     * under your repositories section
+     */
+    get sourceTags() { return []; }
     // <-----------        OPTIONAL METHODS        -----------> //
     /**
      * Returns the number of calls that can be done per second from the application
@@ -183,14 +308,111 @@ class Source {
 }
 exports.Source = Source;
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+Object.defineProperty(exports, "__esModule", { value: true });
+__export(require("./Madara"));
+__export(require("./Source"));
+
+},{"./Madara":1,"./Source":2}],4:[function(require,module,exports){
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+Object.defineProperty(exports, "__esModule", { value: true });
+__export(require("./base"));
+__export(require("./models"));
+
+},{"./base":3,"./models":8}],5:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Source_1 = require("../Source");
-const Manga_1 = require("../../models/Manga/Manga");
-const Languages_1 = require("../../models/Languages/Languages");
+var LanguageCode;
+(function (LanguageCode) {
+    LanguageCode["UNKNOWN"] = "_unknown";
+    LanguageCode["BENGALI"] = "bd";
+    LanguageCode["BULGARIAN"] = "bg";
+    LanguageCode["BRAZILIAN"] = "br";
+    LanguageCode["CHINEESE"] = "cn";
+    LanguageCode["CZECH"] = "cz";
+    LanguageCode["GERMAN"] = "de";
+    LanguageCode["DANISH"] = "dk";
+    LanguageCode["ENGLISH"] = "gb";
+    LanguageCode["SPANISH"] = "es";
+    LanguageCode["FINNISH"] = "fi";
+    LanguageCode["FRENCH"] = "fr";
+    LanguageCode["WELSH"] = "gb";
+    LanguageCode["GREEK"] = "gr";
+    LanguageCode["CHINEESE_HONGKONG"] = "hk";
+    LanguageCode["HUNGARIAN"] = "hu";
+    LanguageCode["INDONESIAN"] = "id";
+    LanguageCode["ISRELI"] = "il";
+    LanguageCode["INDIAN"] = "in";
+    LanguageCode["IRAN"] = "ir";
+    LanguageCode["ITALIAN"] = "it";
+    LanguageCode["JAPANESE"] = "jp";
+    LanguageCode["KOREAN"] = "kr";
+    LanguageCode["LITHUANIAN"] = "lt";
+    LanguageCode["MONGOLIAN"] = "mn";
+    LanguageCode["MEXIAN"] = "mx";
+    LanguageCode["MALAY"] = "my";
+    LanguageCode["DUTCH"] = "nl";
+    LanguageCode["NORWEGIAN"] = "no";
+    LanguageCode["PHILIPPINE"] = "ph";
+    LanguageCode["POLISH"] = "pl";
+    LanguageCode["PORTUGUESE"] = "pt";
+    LanguageCode["ROMANIAN"] = "ro";
+    LanguageCode["RUSSIAN"] = "ru";
+    LanguageCode["SANSKRIT"] = "sa";
+    LanguageCode["SAMI"] = "si";
+    LanguageCode["THAI"] = "th";
+    LanguageCode["TURKISH"] = "tr";
+    LanguageCode["UKRAINIAN"] = "ua";
+    LanguageCode["VIETNAMESE"] = "vn";
+})(LanguageCode = exports.LanguageCode || (exports.LanguageCode = {}));
+
+},{}],6:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var MangaStatus;
+(function (MangaStatus) {
+    MangaStatus[MangaStatus["ONGOING"] = 1] = "ONGOING";
+    MangaStatus[MangaStatus["COMPLETED"] = 0] = "COMPLETED";
+})(MangaStatus = exports.MangaStatus || (exports.MangaStatus = {}));
+
+},{}],7:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * An enumerator which {@link SourceTags} uses to define the color of the tag rendered on the website.
+ * Info is blue, success is green, warning is yellow and danger is red.
+ */
+var TagType;
+(function (TagType) {
+    TagType["WARNING"] = "warning";
+    TagType["INFO"] = "info";
+    TagType["SUCCESS"] = "success";
+    TagType["DANGER"] = "danger";
+})(TagType = exports.TagType || (exports.TagType = {}));
+
+},{}],8:[function(require,module,exports){
+"use strict";
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
+Object.defineProperty(exports, "__esModule", { value: true });
+__export(require("./Manga"));
+__export(require("./SourceTag"));
+__export(require("./Languages"));
+
+},{"./Languages":5,"./Manga":6,"./SourceTag":7}],9:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const paperback_extensions_common_1 = require("paperback-extensions-common");
 const TOONILY_DOMAIN = 'https://toonily.com';
-class Toonily extends Source_1.Source {
+class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
@@ -227,7 +449,7 @@ class Toonily extends Source_1.Source {
         let hentai = $('.adult').toArray().length > 0 ? true : false;
         let image = $('img', $('.summary_image')).attr('data-src');
         let rating = $('.total_votes').text();
-        let status = $('.summary-content').text().toLowerCase().includes('ongoing') ? Manga_1.MangaStatus.ONGOING : Manga_1.MangaStatus.COMPLETED;
+        let status = $('.summary-content').text().toLowerCase().includes('ongoing') ? paperback_extensions_common_1.MangaStatus.ONGOING : paperback_extensions_common_1.MangaStatus.COMPLETED;
         let artist = $('a', $('.artist-content')).text();
         let author = $('a', $('.author-content')).text();
         let desc = $('p', $('.summary__content ')).text();
@@ -276,7 +498,7 @@ class Toonily extends Source_1.Source {
             chapters.push(createChapter({
                 id: id,
                 mangaId: metadata.id,
-                langCode: Languages_1.LanguageCode.ENGLISH,
+                langCode: paperback_extensions_common_1.LanguageCode.ENGLISH,
                 chapNum: chapNum,
                 time: date
             }));
@@ -368,5 +590,5 @@ class Toonily extends Source_1.Source {
 }
 exports.Toonily = Toonily;
 
-},{"../../models/Languages/Languages":1,"../../models/Manga/Manga":2,"../Source":3}]},{},[4])(4)
+},{"paperback-extensions-common":4}]},{},[9])(9)
 });

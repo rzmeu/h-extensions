@@ -8,7 +8,7 @@ export class Toonily extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.0.0' }
+  get version(): string { return '1.0.1' }
   get name(): string { return 'Toonily' }
   get description(): string { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.' }
   get author(): string { return 'Conrad Weiser' }
@@ -202,10 +202,14 @@ export class Toonily extends Source {
             let image = $('img', $(obj)).attr('data-src')
             let rating = $('.total_votes', $(obj)).text().trim()
 
+            if(!title || !image || !id) {
+              continue
+            }
+
             latestUpdates.push(createMangaTile({
-                id: id!,
-                title: createIconText({text: title!}),
-                image: image!,
+                id: id,
+                title: createIconText({text: title}),
+                image: image,
                 primaryText: createIconText({text: rating, icon: 'star.fill'})
             }))
         }

@@ -8,7 +8,7 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.3' }
+  get version(): string { return '0.8.4' }
   get name(): string { return 'nHentai (Country-Proof)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -178,7 +178,7 @@ export class NHentaiRedirected extends Source {
     let counter = 1
     for(let obj of $($('img', '.thumb-container')).toArray()) {
      let imageType = $(obj).attr('data-src')?.match(/\.([png|jpg]{3,3})/g)![0]
-     pages.push(`https://i.nhentai.net/galleries/${galleryId}/${counter}${imageType}`)
+     pages.push(`${NHENTAI_DOMAIN}/galleries/${galleryId}/${counter}${imageType}`)
      counter++
     }
 

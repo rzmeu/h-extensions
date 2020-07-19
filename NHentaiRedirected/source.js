@@ -2612,6 +2612,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
     get icon() { return "logo.png"; }
     get hentaiSource() { return true; }
     getMangaShareUrl(mangaId) { return `${NHENTAI_DOMAIN}/g/${mangaId}`; }
+    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.WARNING }]; }
     getMangaDetailsRequest(ids) {
         let requests = [];
         for (let id of ids) {

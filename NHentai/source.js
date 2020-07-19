@@ -2612,6 +2612,7 @@ class NHentai extends paperback_extensions_common_1.Source {
     get icon() { return "logo.png"; } // The website has SVG versions, I had to find one off of a different source
     get hentaiSource() { return true; }
     getMangaShareUrl(mangaId) { return `https://nhentai.net/g/${mangaId}`; }
+    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.WARNING }]; }
     convertLanguageToCode(language) {
         switch (language.toLowerCase()) {
             case "english": return paperback_extensions_common_1.LanguageCode.ENGLISH;

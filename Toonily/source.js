@@ -2611,6 +2611,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     get authorWebsite() { return 'http://github.com/conradweiser'; }
     get icon() { return "logo.png"; }
     get hentaiSource() { return false; }
+    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.WARNING }]; }
     getMangaDetailsRequest(ids) {
         let requests = [];
         for (let id of ids) {

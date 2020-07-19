@@ -1,4 +1,4 @@
-import { Source, Manga, MangaStatus, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, MangaUpdates } from "paperback-extensions-common"
+import { Source, Manga, MangaStatus, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, MangaUpdates, SourceTag, TagType } from "paperback-extensions-common"
 const ME_DOMAIN = 'https://manhwa18.com'
 
 export class ManhwaEighteen extends Source {
@@ -14,6 +14,7 @@ export class ManhwaEighteen extends Source {
   get icon(): string { return "logo.png" } 
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `${ME_DOMAIN}/${mangaId}.html`}
+  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.WARNING}]}
 
 
 

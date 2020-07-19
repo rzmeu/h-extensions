@@ -1,4 +1,4 @@
-import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request } from "paperback-extensions-common"
+import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType } from "paperback-extensions-common"
 const NHENTAI_DOMAIN = 'https://nhentai.net'
 
 export class NHentai extends Source {
@@ -14,6 +14,7 @@ export class NHentai extends Source {
   get icon(): string { return "logo.png" } // The website has SVG versions, I had to find one off of a different source
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `https://nhentai.net/g/${mangaId}`}
+  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.WARNING}]}
 
 
   convertLanguageToCode(language: string) {

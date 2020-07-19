@@ -1,5 +1,5 @@
 
-import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request } from "paperback-extensions-common"
+import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType } from "paperback-extensions-common"
 
 const NHENTAI_DOMAIN = 'http://paperback-redirector.herokuapp.com/nh'
 
@@ -16,6 +16,7 @@ export class NHentaiRedirected extends Source {
   get icon(): string { return "logo.png" }
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `${NHENTAI_DOMAIN}/g/${mangaId}`}
+  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.WARNING}]}
 
   getMangaDetailsRequest(ids: string[]): Request[] {
     let requests: Request[] = []

@@ -2604,7 +2604,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.0.2'; }
+    get version() { return '1.0.3'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
@@ -2748,6 +2748,35 @@ class Toonily extends paperback_extensions_common_1.Source {
             }));
         }
         return mangaTiles;
+    }
+    getHomePageSectionRequest() {
+        let request = createRequestObject({ url: `${TOONILY_DOMAIN}`, method: 'GET' });
+        let latestUpdatesSection = createHomeSection({ id: 'latest_updates', title: 'LATEST UPDATES' });
+        return [createHomeSectionRequest({ request: request, sections: [latestUpdatesSection] })];
+    }
+    getHomePageSections(data, section) {
+        var _a, _b;
+        let $ = this.cheerio.load(data);
+        let latestUpdates = [];
+        for (let row of $('.page-listing-item').toArray()) {
+            for (let obj of $('.col-6', $(row)).toArray()) {
+                let id = (_a = $('a', $('.item-thumb', $(obj))).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');
+                let title = (_b = $('a', $('.item-thumb', $(obj))).attr('title')) === null || _b === void 0 ? void 0 : _b.trim();
+                let image = $('img', $(obj)).attr('data-src');
+                let rating = $('.total_votes', $(obj)).text().trim();
+                if (!title || !image || !id) {
+                    continue;
+                }
+                latestUpdates.push(createMangaTile({
+                    id: id,
+                    title: createIconText({ text: title }),
+                    image: image,
+                    primaryText: createIconText({ text: rating, icon: 'star.fill' })
+                }));
+            }
+        }
+        section[0].items = latestUpdates;
+        return section;
     }
 }
 exports.Toonily = Toonily;

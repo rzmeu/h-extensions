@@ -79,5 +79,11 @@ describe('Toonily Tests', function () {
         let homeSections = await wrapper.getHomePageSections(source)
         let result = homeSections[0]
         expect(result).to.exist
+
+        expect(result.id, "HomeSection does not have a valid ID").to.not.be.empty
+        
+        let item = result.items[0]
+        expect(item.id, "Homesection item does not have a valid ID").to.not.be.empty
+        expect(item.image, "Homesection item does not have a valid image").to.not.be.empty
     })
 });

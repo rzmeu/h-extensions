@@ -1,4 +1,4 @@
-import { Source, Manga, MangaStatus, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request } from "paperback-extensions-common"
+import { Source, Manga, MangaStatus, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, MangaUpdates } from "paperback-extensions-common"
 const ME_DOMAIN = 'https://manhwa18.com'
 
 export class ManhwaEighteen extends Source {
@@ -286,5 +286,26 @@ getHomePageSections(data: any, sections: HomeSection[]): HomeSection[] {
     sections[0].items = latestManga
 
     return sections
-}
+  }
+
+  // filterUpdatedMangaRequest(ids: any, time: Date, page: number): Request {
+  //   let metadata = { ids: ids, targetDate: time }
+  //   return createRequestObject({
+  //       url: `${ME_DOMAIN}/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`,
+  //       method: 'GET',
+  //       metadata: metadata,
+  //   })
+  // }
+
+  // filterUpdatedManga(data: any, metadata: any): MangaUpdates | null {
+  //   let $ = this.cheerio.load(data)
+  //   let returnObject: MangaUpdates = createMangaUpdates({
+  //     'ids': [],
+  //     'moreResults': true
+  //   })
+
+  //   for(let obj of $('.col-lg-6', $('.top', $('.col-lg-9'))).toArray()) {
+  //     let mangaId = $('a', $(obj)).attr('href')
+  //   }
+  // }
 }

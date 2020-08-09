@@ -8,7 +8,7 @@ export class Toonily extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.0.3' }
+  get version(): string { return '1.0.4' }
   get name(): string { return 'Toonily' }
   get description(): string { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.' }
   get author(): string { return 'Conrad Weiser' }
@@ -46,7 +46,7 @@ export class Toonily extends Source {
     let title = $('h1', $('.post-title')).text().replace('18+', '').trim()
     let hentai = $('.adult').toArray().length > 0 ? true : false
     let image = $('img', $('.summary_image')).attr('data-src')
-    let rating = $('.total_votes').text()
+    let rating = $('.total_votes').text().replace('Your Rating', '')
     let status: MangaStatus = $('.summary-content').text().toLowerCase().includes('ongoing') ? MangaStatus.ONGOING : MangaStatus.COMPLETED
     let artist = $('a', $('.artist-content')).text()
     let author = $('a', $('.author-content')).text()
@@ -57,6 +57,10 @@ export class Toonily extends Source {
     for(let obj of $('a', $('.genres-content')).toArray()) {
         let tagId = $(obj).attr('href')?.replace('https://toonily.com/webtoon-genre/', '').replace('/', '')
         let tagName = $(obj).text()
+
+        if(!tagId || !tagName) {
+          continue
+        }
 
         tags.push(createTag({id: tagId!, label: tagName}))
     }

@@ -82,8 +82,11 @@ describe('Toonily Tests', function () {
 
         expect(result.id, "HomeSection does not have a valid ID").to.not.be.empty
         
-        let item = result.items[0]
-        expect(item.id, "Homesection item does not have a valid ID").to.not.be.empty
-        expect(item.image, "Homesection item does not have a valid image").to.not.be.empty
+        for(let obj of result.items) {
+            expect(obj.id, "Homesection item does not have a valid ID").to.not.be.empty
+            expect(obj.image, "Homesection item does not have a valid image").to.not.be.empty
+            expect(obj.title, "Homesection item does not have a valid title").to.not.be.empty
+            expect(obj.primaryText.text, "Homesection item did not parse rating correctly").to.not.be.empty
+        }
     })
 });

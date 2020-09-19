@@ -8,7 +8,7 @@ export class Toonily extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.0.4' }
+  get version(): string { return '1.0.5' }
   get name(): string { return 'Toonily' }
   get description(): string { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.' }
   get author(): string { return 'Conrad Weiser' }
@@ -138,9 +138,18 @@ export class Toonily extends Source {
 
     let pages: string[] = []
     for(let obj of $('.page-break', $('.reading-content')).toArray()) {
-        pages.push(
-            $('img', $(obj)).attr('data-src')?.trim()!
-        )
+
+        let pageContent = $('img', $(obj)).attr('data-src')?.trim()
+        if(!pageContent) {
+          // Try the alternative page getter
+          pages.push($('img', $(obj)).attr('src')?.trim()!)
+          
+        }
+        else {
+          pages.push(pageContent)
+        }
+
+
     }
 
     return createChapterDetails({

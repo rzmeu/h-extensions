@@ -2604,7 +2604,7 @@ class NHentai extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.8.6'; }
+    get version() { return '0.8.7'; }
     get name() { return 'nHentai'; }
     get description() { return 'Extension that pulls manga from nHentai'; }
     get author() { return 'Conrad Weiser'; }
@@ -2807,7 +2807,6 @@ class NHentai extends paperback_extensions_common_1.Source {
             param += ("Artist:" + query.artist.trim().replace(" ", "+"));
         }
         param = param.trim();
-        param = encodeURI(param);
         return createRequestObject({
             url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=${page}`,
             metadata: { sixDigit: false },

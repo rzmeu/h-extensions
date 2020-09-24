@@ -6,7 +6,7 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.4' }
+  get version(): string { return '0.8.5' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -219,21 +219,21 @@ export class NHentai extends Source {
     // Concat all of the available options together into a search keyword which can be supplied as a GET request param
     let param = ''
     if (query.title) {
-      param += query.title.trim().replace(" ", "+") + '+'
+      param += query.title.trim().replace(" ", "+")
     }
     if (query.includeContent) {
       for (let content in query.includeContent) {
-        param += ('tag:"' + query.includeContent[content].trim().replace(" ", "+") + '"+')
+        param += ('tag:"' + query.includeContent[content].trim().replace(" ", "+"))
       }
     }
     if (query.excludeContent) {
       for (let content in query.excludeContent) {
-        param += ('-tag:"' + query.excludeContent[content].trim().replace(" ", "+") + '"+')
+        param += ('-tag:"' + query.excludeContent[content].trim().replace(" ", "+"))
       }
     }
 
     if (query.artist) {
-      param += ("Artist:" + query.artist.trim().replace(" ", "+") + "+")
+      param += ("Artist:" + query.artist.trim().replace(" ", "+"))
     }
 
     param = param.trim()

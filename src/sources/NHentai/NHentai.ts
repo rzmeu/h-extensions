@@ -6,7 +6,7 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.5' }
+  get version(): string { return '0.8.6' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -215,6 +215,8 @@ export class NHentai extends Source {
         method: "GET"
       })
     }
+
+    page = 1
 
     // Concat all of the available options together into a search keyword which can be supplied as a GET request param
     let param = ''

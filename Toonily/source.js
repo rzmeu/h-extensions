@@ -2681,14 +2681,14 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.0.6'; }
+    get version() { return '1.0.7'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
     get authorWebsite() { return 'http://github.com/conradweiser'; }
     get icon() { return "logo.png"; }
     get hentaiSource() { return false; }
-    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }, { text: "Korean Content", type: paperback_extensions_common_1.TagType.BLUE }, { text: "English", type: paperback_extensions_common_1.TagType.GREEN }]; }
+    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }]; }
     get websiteBaseURL() { return TOONILY_DOMAIN; }
     getMangaDetailsRequest(ids) {
         let requests = [];

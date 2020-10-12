@@ -1,5 +1,5 @@
 
-import { Source, Manga, MangaStatus, Tag, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, Request, SourceTag, TagType } from "paperback-extensions-common"
+import { Source, Manga, MangaStatus, Tag, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, Request, SourceTag, TagType, PagedResults } from "paperback-extensions-common"
 
 const TOONILY_DOMAIN = 'https://toonily.com'
 
@@ -8,14 +8,15 @@ export class Toonily extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.0.5' }
+  get version(): string { return '1.0.6' }
   get name(): string { return 'Toonily' }
   get description(): string { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.' }
   get author(): string { return 'Conrad Weiser' }
   get authorWebsite(): string { return 'http://github.com/conradweiser'}
   get icon(): string { return "logo.png" } 
   get hentaiSource(): boolean { return false }
-  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.WARNING}]}
+  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.YELLOW}, {text: "Korean Content", type: TagType.BLUE}, {text: "English", type: TagType.GREEN}]}
+  get websiteBaseURL(): string { return TOONILY_DOMAIN }
 
 
   getMangaDetailsRequest(ids: string[]): Request[] {
@@ -161,7 +162,7 @@ export class Toonily extends Source {
   }
 
 
-  searchRequest(query: SearchRequest, page: number): Request {
+  searchRequest(query: SearchRequest): Request {
       query.title = query.title?.replace(" ", "+")
     return createRequestObject({
       //https://toonily.com/?s=Hero&post_type=wp-manga
@@ -171,7 +172,7 @@ export class Toonily extends Source {
     })
   }
 
-  search(data: any, metadata: any): MangaTile[] {
+  search(data: any, metadata: any): PagedResults {
 
     let $ = this.cheerio.load(data)
     let mangaTiles: MangaTile[] = []
@@ -191,7 +192,9 @@ export class Toonily extends Source {
         }))
     }
 
-    return mangaTiles
+    return createPagedResults({
+      results: mangaTiles
+    })
   }
 
   getHomePageSectionRequest(): HomeSectionRequest[] | null { 

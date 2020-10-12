@@ -1,12 +1,13 @@
-import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType } from "paperback-extensions-common"
+import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType, PagedResults } from "paperback-extensions-common"
 const NHENTAI_DOMAIN = 'https://nhentai.net'
 
 export class NHentai extends Source {
+
   constructor(cheerio: CheerioAPI) {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.7' }
+  get version(): string { return '0.8.8' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -14,7 +15,8 @@ export class NHentai extends Source {
   get icon(): string { return "logo.png" } // The website has SVG versions, I had to find one off of a different source
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `https://nhentai.net/g/${mangaId}`}
-  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.WARNING}]}
+  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.YELLOW}]}
+  get websiteBaseURL(): string { return NHENTAI_DOMAIN }
 
 
   convertLanguageToCode(language: string) {
@@ -199,7 +201,7 @@ export class NHentai extends Source {
   }
 
 
-  searchRequest(query: SearchRequest, page: number): Request | null {
+  searchRequest(query: SearchRequest): Request | null {
 
     // If h-sources are disabled for the search request, always return null
     if(query.hStatus === false) {
@@ -215,8 +217,6 @@ export class NHentai extends Source {
         method: "GET"
       })
     }
-
-    page = 1
 
     // Concat all of the available options together into a search keyword which can be supplied as a GET request param
     let param = ''
@@ -241,14 +241,14 @@ export class NHentai extends Source {
     param = param.trim()
 
     return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=${page}`,
+      url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=1`,
       metadata: { sixDigit: false },
       timeout: 4000,
       method: "GET"
     })
   }
 
-  search(data: any, metadata: any): MangaTile[] {
+  search(data: any, metadata: any): PagedResults {
 
     let $ = this.cheerio.load(data)
     let mangaTiles: MangaTile[] = []
@@ -271,7 +271,10 @@ export class NHentai extends Source {
         title: createIconText({ text: title }),
         image: $('[itemprop=image]').attr('content') ?? ''
       }))
-      return mangaTiles
+
+      return createPagedResults({
+        results: mangaTiles
+      })
     }
 
     let containerNode = $('.index-container')
@@ -298,7 +301,12 @@ export class NHentai extends Source {
       }))
     }
 
-    return mangaTiles
+    // TODO:  Are there more search results that we can retrieve?
+
+
+    return createPagedResults({
+      results: mangaTiles
+    })
   }
 
   getTagsRequest(): Request | null {
@@ -338,10 +346,12 @@ export class NHentai extends Source {
     return [tagSection]
   }
 
+
+
   getHomePageSectionRequest(): HomeSectionRequest[] | null {
 
     let request = createRequestObject({ url: `${NHENTAI_DOMAIN}`, method: 'GET', })
-    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: true })
+    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })
     return [createHomeSectionRequest({ request: request, sections: [homeSection] })]
 
   }
@@ -382,11 +392,6 @@ export class NHentai extends Source {
       url: `${NHENTAI_DOMAIN}/?page=${page}`,
       method: 'GET'
     })
-  }
-
-  getViewMoreItems(data: any, key: string): MangaTile[] | null {
-    let tiles = this.getHomePageSections(data, [createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })])
-    return tiles![0].items ?? null;
   }
 
 

@@ -1,5 +1,5 @@
 import cheerio from 'cheerio'
-import { NHentaiRedirected } from "../sources/NHentaiRedirected/NHentaiRedirected";
+import { NHentaiRedirected } from "../NHentaiRedirected/NHentaiRedirected";
 import { APIWrapper, Source } from 'paperback-extensions-common';
 
 describe('N-Hentai Redirector Tests', function () {

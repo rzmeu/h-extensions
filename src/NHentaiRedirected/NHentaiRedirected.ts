@@ -1,5 +1,5 @@
 
-import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType } from "paperback-extensions-common"
+import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType, PagedResults } from "paperback-extensions-common"
 
 const NHENTAI_DOMAIN = 'http://paperback-redirector.herokuapp.com/nh'
 
@@ -8,7 +8,7 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.4' }
+  get version(): string { return '0.8.5' }
   get name(): string { return 'nHentai (Country-Proof)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -16,7 +16,8 @@ export class NHentaiRedirected extends Source {
   get icon(): string { return "logo.png" }
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `${NHENTAI_DOMAIN}/g/${mangaId}`}
-  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.WARNING}]}
+  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.YELLOW}]}
+  get websiteBaseURL(): string { return NHENTAI_DOMAIN }
 
   getMangaDetailsRequest(ids: string[]): Request[] {
     let requests: Request[] = []
@@ -195,7 +196,7 @@ export class NHentaiRedirected extends Source {
   }
 
 
-  searchRequest(query: SearchRequest, page: number): Request | null {
+  searchRequest(query: SearchRequest): Request | null {
 
     // If h-sources are disabled for the search request, always return null
     if(query.hStatus === false) {
@@ -236,14 +237,14 @@ export class NHentaiRedirected extends Source {
     param = encodeURI(param)
 
     return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=${page}`,
+      url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=1`,
       metadata: { sixDigit: false },
       timeout: 4000,
       method: "GET"
     })
   }
 
-  search(data: any, metadata: any): MangaTile[] {
+  search(data: any, metadata: any): PagedResults {
 
     let $ = this.cheerio.load(data)
     let mangaTiles: MangaTile[] = []
@@ -265,7 +266,10 @@ export class NHentaiRedirected extends Source {
         title: createIconText({ text: title }),
         image: $('[itemprop=image]').attr('content') ?? ''
       }))
-      return mangaTiles
+
+      return createPagedResults({
+        results: mangaTiles
+      })
     }
 
     let containerNode = $('.index-container')
@@ -293,7 +297,11 @@ export class NHentaiRedirected extends Source {
       }))
     }
 
-    return mangaTiles
+    //TODO: Other requests for furthur read more stuff?
+
+    return createPagedResults({
+      results: mangaTiles
+    }) 
   }
 
   getTagsRequest(): Request | null {
@@ -336,7 +344,7 @@ export class NHentaiRedirected extends Source {
   getHomePageSectionRequest(): HomeSectionRequest[] | null {
 
     let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/site/`, method: 'GET', })
-    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: true })
+    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })
     return [createHomeSectionRequest({ request: request, sections: [homeSection] })]
 
   }
@@ -379,11 +387,5 @@ export class NHentaiRedirected extends Source {
       method: 'GET'
     })
   }
-
-  getViewMoreItems(data: any, key: string): MangaTile[] | null {
-    let tiles = this.getHomePageSections(data, [createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })])
-    return tiles![0].items ?? null;
-  }
-
 
 }

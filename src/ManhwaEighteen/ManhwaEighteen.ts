@@ -1,12 +1,13 @@
-import { Source, Manga, MangaStatus, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, MangaUpdates, SourceTag, TagType } from "paperback-extensions-common"
+import { Source, Manga, MangaStatus, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, MangaUpdates, SourceTag, TagType, PagedResults } from "paperback-extensions-common"
 const ME_DOMAIN = 'https://manhwa18.com'
 
 export class ManhwaEighteen extends Source {
+
   constructor(cheerio: CheerioAPI) {
     super(cheerio)
   }
 
-  get version(): string { return '0.6.0' }
+  get version(): string { return '0.6.1' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -14,9 +15,8 @@ export class ManhwaEighteen extends Source {
   get icon(): string { return "logo.png" } 
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `${ME_DOMAIN}/${mangaId}.html`}
-  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.WARNING}]}
-
-
+  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.YELLOW}]}
+  get websiteBaseURL(): string {  return ME_DOMAIN  }
 
   getMangaDetailsRequest(ids: string[]): Request[] {
     let requests: Request[] = []
@@ -213,7 +213,7 @@ export class ManhwaEighteen extends Source {
   }
 
 
-  searchRequest(query: SearchRequest, page: number): Request | null {
+  searchRequest(query: SearchRequest): Request | null {
 
     // If h-sources are disabled for the search request, always return null
     if(query.hStatus === false) {
@@ -229,7 +229,7 @@ export class ManhwaEighteen extends Source {
     })
   }
 
-  search(data: any, metadata: any): MangaTile[] {
+  search(data: any, metadata: any): PagedResults {
 
     let $ = this.cheerio.load(data)
     let mangaTiles: MangaTile[] = []
@@ -251,7 +251,9 @@ export class ManhwaEighteen extends Source {
         }))
     }
 
-    return mangaTiles
+    return createPagedResults({
+      results: mangaTiles
+    })
   }
 
   getHomePageSectionRequest(): HomeSectionRequest[] {

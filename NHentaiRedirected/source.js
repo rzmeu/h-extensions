@@ -766,7 +766,7 @@ module.exports = function transformData(data, headers, fns) {
 };
 
 },{"./../utils":26}],16:[function(require,module,exports){
-(function (process){
+(function (process){(function (){
 'use strict';
 
 var utils = require('./utils');
@@ -865,8 +865,8 @@ utils.forEach(['post', 'put', 'patch'], function forEachMethodWithData(method) {
 
 module.exports = defaults;
 
-}).call(this,require('_process'))
-},{"./adapters/http":2,"./adapters/xhr":2,"./helpers/normalizeHeaderName":23,"./utils":26,"_process":45}],17:[function(require,module,exports){
+}).call(this)}).call(this,require('_process'))
+},{"./adapters/http":2,"./adapters/xhr":2,"./helpers/normalizeHeaderName":23,"./utils":26,"_process":56}],17:[function(require,module,exports){
 'use strict';
 
 module.exports = function bind(fn, thisArg) {
@@ -1565,6 +1565,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.APIWrapper = void 0;
 // Import the global wrapper for all the models
 require("./models/impl_export");
 // import axios from 'axios'  <- use this when you've fixed the typings
@@ -1699,11 +1700,12 @@ class APIWrapper {
      * @param referenceTime will only get manga up to this time
      * @returns List of the ids of the manga that were recently updated
      */
+    // TODO: Update method to support new changes
     filterUpdatedManga(source, ids, referenceTime) {
         return __awaiter(this, void 0, void 0, function* () {
             let currentPage = 1;
             let hasResults = true;
-            let request = source.filterUpdatedMangaRequest(ids, referenceTime, currentPage);
+            let request = source.filterUpdatedMangaRequest(ids, referenceTime);
             if (request == null)
                 return Promise.resolve([]);
             let url = request.url;
@@ -1810,10 +1812,11 @@ class APIWrapper {
      * @param query
      * @param page
      */
+    // TODO: update this to return a promise of PagedResults
     search(source, query, page) {
-        var _a, _b;
+        var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
-            let request = source.searchRequest(query, page);
+            let request = source.searchRequest(query);
             if (request == null)
                 return Promise.resolve([]);
             let headers = request.headers == undefined ? {} : request.headers;
@@ -1827,7 +1830,7 @@ class APIWrapper {
                     data: request.data,
                     timeout: request.timeout || 0
                 });
-                return (_b = source.search(data.data, request.metadata)) !== null && _b !== void 0 ? _b : [];
+                return (_c = (_b = source.search(data.data, request.metadata)) === null || _b === void 0 ? void 0 : _b.results) !== null && _c !== void 0 ? _c : [];
             }
             catch (e) {
                 return [];
@@ -1859,29 +1862,27 @@ class APIWrapper {
             }
         });
     }
+    // TODO: update this to return a promise of PagedResults
     getViewMoreItems(source, key, page) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            let request = source.getViewMoreRequest(key, page);
-            if (request == null)
-                return Promise.resolve([]);
-            let headers = request.headers == undefined ? {} : request.headers;
-            headers['Cookie'] = this.formatCookie(request);
-            headers['User-Agent'] = 'Paperback-iOS';
-            try {
-                var data = yield axios.request({
-                    url: `${request.url}${(_a = request.param) !== null && _a !== void 0 ? _a : ''}`,
-                    method: request.method,
-                    headers: headers,
-                    data: request.data,
-                    timeout: request.timeout || 0
-                });
-                return source.getViewMoreItems(data.data, key);
-            }
-            catch (e) {
-                console.log(e);
-                return [];
-            }
+            // let request = source.getViewMoreRequest(key)
+            // if (request == null) return Promise.resolve([])
+            // let headers: any = request.headers == undefined ? {} : request.headers
+            // headers['Cookie'] = this.formatCookie(request)
+            // headers['User-Agent'] = 'Paperback-iOS'
+            // try {
+            //     var data = await axios.request({
+            //         url: `${request.url}${request.param ?? ''}`,
+            //         method: request.method,
+            //         headers: headers,
+            //         data: request.data,
+            //         timeout: request.timeout || 0
+            //     })
+            //     return source.getViewMoreItems(data.data, key, request.metadata)?.results
+            // } catch (e) {
+            //     console.log(e)
+            //     return []
+            // }
         });
     }
     formatCookie(info) {
@@ -1894,9 +1895,10 @@ class APIWrapper {
 }
 exports.APIWrapper = APIWrapper;
 
-},{"./models/impl_export":43,"axios":1}],28:[function(require,module,exports){
+},{"./models/impl_export":54,"axios":1}],28:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Madara = void 0;
 const Source_1 = require("./Source");
 const Manga_1 = require("../models/Manga");
 class Madara extends Source_1.Source {
@@ -2023,7 +2025,7 @@ class Madara extends Source_1.Source {
         let $ = this.cheerio.load(data);
         let pageElements = $(this.pageListSelector);
         for (let page of pageElements.toArray()) {
-            pages.push(((_a = $(page)) === null || _a === void 0 ? void 0 : _a.find("img")).first().attr(this.pageImageAttr).trim());
+            pages.push((_a = $(page)) === null || _a === void 0 ? void 0 : _a.find("img").first().attr(this.pageImageAttr).trim());
         }
         let chapterDetails = createChapterDetails({
             id: metadata.chapterId,
@@ -2033,7 +2035,7 @@ class Madara extends Source_1.Source {
         });
         return chapterDetails;
     }
-    searchRequest(query, page) {
+    constructSearchRequest(query, page) {
         var _a;
         let url = `${this.MadaraDomain}/page/${page}/?`;
         let author = query.author || '';
@@ -2042,11 +2044,19 @@ class Madara extends Source_1.Source {
         let paramaters = { "s": query.title, "post_type": "wp-manga", "author": author, "artist": artist, "genres": genres };
         return createRequestObject({
             url: url + new URLSearchParams(paramaters).toString(),
-            method: 'GET'
+            method: 'GET',
+            metadata: {
+                request: query,
+                page: page
+            }
         });
     }
-    search(data) {
-        var _a, _b;
+    searchRequest(query) {
+        var _a;
+        return (_a = this.constructSearchRequest(query, 1)) !== null && _a !== void 0 ? _a : null;
+    }
+    search(data, metadata) {
+        var _a, _b, _c;
         let $ = this.cheerio.load(data);
         let mangas = [];
         for (let manga of $(this.searchMangaSelector).toArray()) {
@@ -2065,18 +2075,22 @@ class Madara extends Source_1.Source {
                 }));
             }
         }
-        return mangas;
+        return createPagedResults({
+            results: mangas,
+            nextPage: (_c = this.constructSearchRequest(metadata.query, metadata.page + 1)) !== null && _c !== void 0 ? _c : undefined
+        });
     }
 }
 exports.Madara = Madara;
 
-},{"../models/Manga":37,"./Source":29}],29:[function(require,module,exports){
+},{"../models/Manga":41,"./Source":29}],29:[function(require,module,exports){
 "use strict";
 /**
  * Request objects hold information for a particular source (see sources for example)
  * This allows us to to use a generic api to make the calls against any source
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Source = void 0;
 class Source {
     constructor(cheerio) {
         this.cheerio = cheerio;
@@ -2095,14 +2109,15 @@ class Source {
      */
     get sourceTags() { return []; }
     // <-----------        OPTIONAL METHODS        -----------> //
+    requestModifier(request) { return request; }
+    getMangaShareUrl(mangaId) { return null; }
+    getCloudflareBypassRequest() { return null; }
     /**
      * Returns the number of calls that can be done per second from the application
      * This is to avoid IP bans from many of the sources
      * Can be adjusted per source since different sites have different limits
      */
     get rateLimit() { return 2; }
-    requestModifier(request) { return request; }
-    getMangaShareUrl(mangaId) { return null; }
     /**
      * (OPTIONAL METHOD) Different sources have different tags available for searching. This method
      * should target a URL which allows you to parse apart all of the available tags which a website has.
@@ -2130,7 +2145,7 @@ class Source {
      * @param page A page number parameter may be used if your update scanning requires you to
      * traverse multiple pages.
      */
-    filterUpdatedMangaRequest(ids, time, page) { return null; }
+    filterUpdatedMangaRequest(ids, time) { return null; }
     /**
      * (OPTIONAL METHOD) A function which should handle parsing apart HTML returned from {@link Source.filterUpdatedMangaRequest}
      * and generate a list manga which has been updated within the timeframe specified in the request.
@@ -2156,7 +2171,7 @@ class Source {
     /**
      * (OPTIONAL METHOD) A function which should handle parsing apart HTML returned from {@link Source.getHomePageSectionRequest}
      * and finish filling out the {@link HomeSection} objects.
-     * Generally this simply should update the parameter obejcts with all of the correct contents, and
+     * Generally this simply should update the parameter objects with all of the correct contents, and
      * return the completed array
      * @param data The HTML which should be parsed into the {@link HomeSection} objects. There may only be one element in the array, that is okay
      * if only one section exists
@@ -2164,19 +2179,12 @@ class Source {
      */
     getHomePageSections(data, section) { return null; }
     /**
-     * (OPTIONAL METHOD) For many of the home page sections, there is an ability to view more of that selection
-     * Calling this function should generate a {@link Request} targeting a new page of a given key
-     * @param key The current page that is being viewed
-     * @param page The page number which you are currently searching
-     */
-    getViewMoreRequest(key, page) { return null; }
-    /**
      * (OPTIONAL METHOD) A function which should handle parsing apart a page
      * and generate different {@link MangaTile} objects which can be found on it
      * @param data HTML which should be parsed into a {@link MangaTile} object
      * @param key
      */
-    getViewMoreItems(data, key) { return null; }
+    getViewMoreItems(data, key, metadata) { return null; }
     // <-----------        PROTECTED METHODS        -----------> //
     // Many sites use '[x] time ago' - Figured it would be good to handle these cases in general
     convertTime(timeAgo) {
@@ -2206,25 +2214,39 @@ exports.Source = Source;
 
 },{}],30:[function(require,module,exports){
 "use strict";
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-__export(require("./Madara"));
-__export(require("./Source"));
+__exportStar(require("./Madara"), exports);
+__exportStar(require("./Source"), exports);
 
 },{"./Madara":28,"./Source":29}],31:[function(require,module,exports){
 "use strict";
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-__export(require("./base"));
-__export(require("./models"));
-__export(require("./APIWrapper"));
+__exportStar(require("./base"), exports);
+__exportStar(require("./models"), exports);
+__exportStar(require("./APIWrapper"), exports);
 
-},{"./APIWrapper":27,"./base":30,"./models":44}],32:[function(require,module,exports){
-(function (global){
+},{"./APIWrapper":27,"./base":30,"./models":55}],32:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2232,9 +2254,13 @@ _global.createChapter = function (chapter) {
     return chapter;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],33:[function(require,module,exports){
-(function (global){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
+},{}],34:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2242,9 +2268,13 @@ _global.createChapterDetails = function (chapterDetails) {
     return chapterDetails;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],34:[function(require,module,exports){
-(function (global){
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],35:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],36:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],37:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2255,10 +2285,13 @@ _global.createHomeSectionRequest = function (homeRequestObject) {
     return homeRequestObject;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],35:[function(require,module,exports){
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],38:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],39:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.LanguageCode = void 0;
 var LanguageCode;
 (function (LanguageCode) {
     LanguageCode["UNKNOWN"] = "_unknown";
@@ -2303,8 +2336,8 @@ var LanguageCode;
     LanguageCode["VIETNAMESE"] = "vn";
 })(LanguageCode = exports.LanguageCode || (exports.LanguageCode = {}));
 
-},{}],36:[function(require,module,exports){
-(function (global){
+},{}],40:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2312,18 +2345,19 @@ _global.createManga = function (manga) {
     return manga;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],37:[function(require,module,exports){
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],41:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MangaStatus = void 0;
 var MangaStatus;
 (function (MangaStatus) {
     MangaStatus[MangaStatus["ONGOING"] = 1] = "ONGOING";
     MangaStatus[MangaStatus["COMPLETED"] = 0] = "COMPLETED";
 })(MangaStatus = exports.MangaStatus || (exports.MangaStatus = {}));
 
-},{}],38:[function(require,module,exports){
-(function (global){
+},{}],42:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2334,9 +2368,25 @@ _global.createIconText = function (iconText) {
     return iconText;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],39:[function(require,module,exports){
-(function (global){
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],43:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],44:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],45:[function(require,module,exports){
+(function (global){(function (){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const _global = global;
+_global.createPagedResults = function (update) {
+    return update;
+};
+
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],46:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],47:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2347,9 +2397,11 @@ _global.createRequestObject = function (requestObject) {
     return requestObject;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],40:[function(require,module,exports){
-(function (global){
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],48:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],49:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2357,24 +2409,29 @@ _global.createSearchRequest = function (searchRequest) {
     return searchRequest;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],41:[function(require,module,exports){
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],50:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],51:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TagType = void 0;
 /**
  * An enumerator which {@link SourceTags} uses to define the color of the tag rendered on the website.
- * Info is blue, success is green, warning is yellow and danger is red.
+ * Five types are available: blue, green, grey, yellow and red, the default one is blue.
+ * Common colors are red for (Broken), yellow for (+18), grey for (Country-Proof)
  */
 var TagType;
 (function (TagType) {
-    TagType["WARNING"] = "warning";
-    TagType["INFO"] = "info";
-    TagType["SUCCESS"] = "success";
-    TagType["DANGER"] = "danger";
+    TagType["BLUE"] = "default";
+    TagType["GREEN"] = "success";
+    TagType["GREY"] = "info";
+    TagType["YELLOW"] = "warning";
+    TagType["RED"] = "danger";
 })(TagType = exports.TagType || (exports.TagType = {}));
 
-},{}],42:[function(require,module,exports){
-(function (global){
+},{}],52:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _global = global;
@@ -2385,8 +2442,10 @@ _global.createTag = function (tag) {
     return tag;
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],43:[function(require,module,exports){
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],53:[function(require,module,exports){
+arguments[4][33][0].apply(exports,arguments)
+},{"dup":33}],54:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("./Chapter/_impl");
@@ -2397,18 +2456,36 @@ require("./MangaTile/_impl");
 require("./RequestObject/_impl");
 require("./SearchRequest/_impl");
 require("./TagSection/_impl");
+require("./PagedResults/_impl");
 
-},{"./Chapter/_impl":32,"./ChapterDetails/_impl":33,"./HomeSection/_impl":34,"./Manga/_impl":36,"./MangaTile/_impl":38,"./RequestObject/_impl":39,"./SearchRequest/_impl":40,"./TagSection/_impl":42}],44:[function(require,module,exports){
+},{"./Chapter/_impl":32,"./ChapterDetails/_impl":34,"./HomeSection/_impl":37,"./Manga/_impl":40,"./MangaTile/_impl":42,"./PagedResults/_impl":45,"./RequestObject/_impl":47,"./SearchRequest/_impl":49,"./TagSection/_impl":52}],55:[function(require,module,exports){
 "use strict";
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-__export(require("./Manga"));
-__export(require("./SourceTag"));
-__export(require("./Languages"));
+__exportStar(require("./Chapter"), exports);
+__exportStar(require("./ChapterDetails"), exports);
+__exportStar(require("./HomeSection"), exports);
+__exportStar(require("./Manga"), exports);
+__exportStar(require("./MangaTile"), exports);
+__exportStar(require("./RequestObject"), exports);
+__exportStar(require("./SearchRequest"), exports);
+__exportStar(require("./TagSection"), exports);
+__exportStar(require("./SourceTag"), exports);
+__exportStar(require("./Languages"), exports);
+__exportStar(require("./Constants"), exports);
+__exportStar(require("./MangaUpdate"), exports);
+__exportStar(require("./PagedResults"), exports);
 
-},{"./Languages":35,"./Manga":37,"./SourceTag":41}],45:[function(require,module,exports){
+},{"./Chapter":33,"./ChapterDetails":35,"./Constants":36,"./HomeSection":38,"./Languages":39,"./Manga":41,"./MangaTile":43,"./MangaUpdate":44,"./PagedResults":46,"./RequestObject":48,"./SearchRequest":50,"./SourceTag":51,"./TagSection":53}],56:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -2594,7 +2671,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],46:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NHentaiRedirected = void 0;
@@ -2604,7 +2681,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.8.4'; }
+    get version() { return '0.8.5'; }
     get name() { return 'nHentai (Country-Proof)'; }
     get description() { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }
@@ -2612,7 +2689,8 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
     get icon() { return "logo.png"; }
     get hentaiSource() { return true; }
     getMangaShareUrl(mangaId) { return `${NHENTAI_DOMAIN}/g/${mangaId}`; }
-    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.WARNING }]; }
+    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }]; }
+    get websiteBaseURL() { return NHENTAI_DOMAIN; }
     getMangaDetailsRequest(ids) {
         let requests = [];
         for (let id of ids) {
@@ -2768,7 +2846,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
         });
         return chapterDetails;
     }
-    searchRequest(query, page) {
+    searchRequest(query) {
         var _a;
         // If h-sources are disabled for the search request, always return null
         if (query.hStatus === false) {
@@ -2804,7 +2882,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
         param = param.trim();
         param = encodeURI(param);
         return createRequestObject({
-            url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=${page}`,
+            url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=1`,
             metadata: { sixDigit: false },
             timeout: 4000,
             method: "GET"
@@ -2828,7 +2906,9 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
                 title: createIconText({ text: title }),
                 image: (_b = $('[itemprop=image]').attr('content')) !== null && _b !== void 0 ? _b : ''
             }));
-            return mangaTiles;
+            return createPagedResults({
+                results: mangaTiles
+            });
         }
         let containerNode = $('.index-container');
         for (let item of $('.gallery', containerNode).toArray()) {
@@ -2848,7 +2928,10 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
                 image: image
             }));
         }
-        return mangaTiles;
+        //TODO: Other requests for furthur read more stuff?
+        return createPagedResults({
+            results: mangaTiles
+        });
     }
     getTagsRequest() {
         return createRequestObject({
@@ -2882,7 +2965,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
     }
     getHomePageSectionRequest() {
         let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/site/`, method: 'GET', });
-        let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: true });
+        let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' });
         return [createHomeSectionRequest({ request: request, sections: [homeSection] })];
     }
     getHomePageSections(data, section) {
@@ -2916,13 +2999,8 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
             method: 'GET'
         });
     }
-    getViewMoreItems(data, key) {
-        var _a;
-        let tiles = this.getHomePageSections(data, [createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })]);
-        return (_a = tiles[0].items) !== null && _a !== void 0 ? _a : null;
-    }
 }
 exports.NHentaiRedirected = NHentaiRedirected;
 
-},{"paperback-extensions-common":31}]},{},[46])(46)
+},{"paperback-extensions-common":31}]},{},[57])(57)
 });

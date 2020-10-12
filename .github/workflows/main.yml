@@ -26,7 +26,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - run: npm install
-      - run: gulp bundle
+      - run: npm run bundle
 
       - name: Deploy
         uses: s0/git-publish-subdir-action@master

@@ -1,5 +1,5 @@
 import cheerio from 'cheerio'
-import { Toonily } from "../sources/Toonily/Toonily";
+import { Toonily } from "../Toonily/Toonily";
 import { APIWrapper, Source } from 'paperback-extensions-common';
 
 describe('Toonily Tests', function () {

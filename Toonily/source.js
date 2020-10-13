@@ -2681,7 +2681,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.0.7'; }
+    get version() { return '1.1.0'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
@@ -2868,6 +2868,64 @@ class Toonily extends paperback_extensions_common_1.Source {
         }
         section[0].items = latestUpdates;
         return section;
+    }
+    filterUpdatedMangaRequest(ids, time) {
+        let metadata = { 'ids': ids, referenceTime: time, page: 1 };
+        return createRequestObject({
+            url: `${TOONILY_DOMAIN}`,
+            method: 'GET',
+            metadata: metadata
+        });
+    }
+    filterUpdatedManga(data, metadata) {
+        var _a;
+        let $ = this.cheerio.load(data);
+        metadata.page = metadata.page++;
+        let returnObject = {
+            'ids': [],
+            nextPage: createRequestObject({
+                url: `${TOONILY_DOMAIN}/page/${metadata.page}`,
+                method: 'GET',
+                metadata: metadata
+            })
+        };
+        for (let row of $('.page-listing-item').toArray()) {
+            for (let obj of $('.col-6', $(row)).toArray()) {
+                let id = (_a = $('a', $('.item-thumb', $(obj))).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');
+                // has this object been updated within the reference date?
+                let chapterItem = $('.chapter-item', $(obj)).toArray()[0]; // Always just use the first entry
+                let postOnText = $('.post-on', $(chapterItem)).text().replace("\n", "").trim();
+                // Toonily has a wack way of displaying dates, it can be one of three things. New, '1 day ago', or a proper date.
+                var date = new Date();
+                if (postOnText.includes('1 day ago')) {
+                    date.setDate(date.getDate() - 1);
+                }
+                else if (postOnText == "") {
+                    // This is a NEW object, we have to parse out the date specifically for this
+                    var dateString = $('img', $(chapterItem)).attr('alt');
+                    if (dateString === null || dateString === void 0 ? void 0 : dateString.includes("mins")) {
+                        dateString = dateString.replace(/\D/g, '');
+                        date.setMinutes(date.getMinutes() - Number(dateString));
+                    }
+                    else if (dateString === null || dateString === void 0 ? void 0 : dateString.includes("hours")) {
+                        dateString = dateString.replace(/\D/g, '');
+                        date.setHours(date.getHours() - Number(dateString));
+                    }
+                }
+                else {
+                    // This is a properly formatted date we can parse
+                    date = new Date(postOnText);
+                }
+                // If this is past our reference time, disable paging to new pages for updates
+                if (date > metadata.referenceTime) {
+                    returnObject.nextPage = undefined;
+                }
+                if (date < metadata.referenceTime) {
+                    returnObject.ids.push(id);
+                }
+            }
+        }
+        return returnObject;
     }
 }
 exports.Toonily = Toonily;

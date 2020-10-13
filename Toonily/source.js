@@ -2681,7 +2681,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.1'; }
+    get version() { return '1.1.2'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
@@ -2888,6 +2888,7 @@ class Toonily extends paperback_extensions_common_1.Source {
                 method: 'GET',
                 metadata: metadata
             });
+            console.log(`Requesting view more for ${TOONILY_DOMAIN}/page/${metadata.page}`);
         }
         returnObject.results = results;
         return returnObject;

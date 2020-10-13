@@ -7,15 +7,15 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.9.0' }
+  get version(): string { return '0.9.1' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
-  get authorWebsite(): string { return 'http://github.com/conradweiser'}
+  get authorWebsite(): string { return 'http://github.com/conradweiser' }
   get icon(): string { return "logo.png" } // The website has SVG versions, I had to find one off of a different source
   get hentaiSource(): boolean { return true }
-  getMangaShareUrl(mangaId: string): string | null { return `https://nhentai.net/g/${mangaId}`}
-  get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.YELLOW}]}
+  getMangaShareUrl(mangaId: string): string | null { return `https://nhentai.net/g/${mangaId}` }
+  get sourceTags(): SourceTag[] { return [{ text: "18+", type: TagType.YELLOW }] }
   get websiteBaseURL(): string { return NHENTAI_DOMAIN }
 
 
@@ -51,7 +51,7 @@ export class NHentai extends Source {
     // Comma seperate all of the tags and store them in our tag section 
     let tagSections: TagSection[] = [createTagSection({ id: '0', label: 'tag', tags: [] })]
     let tags = $('meta[name="twitter:description"]').attr('content')?.split(",") ?? []
-    tagSections[0].tags = tags.map((elem: string) => createTag({id: elem.trim(), label: elem.trim()}))
+    tagSections[0].tags = tags.map((elem: string) => createTag({ id: elem.trim(), label: elem.trim() }))
 
     // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
     title = title.replace(/(\[.+?\])/g, "").trim()
@@ -131,16 +131,16 @@ export class NHentai extends Source {
     for (let item of $('.tag-container').toArray()) {
       if ($(item).text().indexOf("Languages") > -1) {
         let langs = $('span', item).text()
-        
-        if(langs.includes("japanese")) {
+
+        if (langs.includes("japanese")) {
           language = LanguageCode.JAPANESE
-           break
+          break
         }
-        else if(langs.includes("english")) {
+        else if (langs.includes("english")) {
           language = LanguageCode.ENGLISH
           break
         }
-        else if(langs.includes("chinese")) {
+        else if (langs.includes("chinese")) {
           language = LanguageCode.CHINEESE
           break
         }
@@ -182,12 +182,12 @@ export class NHentai extends Source {
     let galleryId = parseInt(gallerySrc?.match(/.*\/(\d*)\//)![1]!)
 
     // Get all of the pages
-     let counter = 1
-     for(let obj of $($('img', '.thumb-container')).toArray()) {
+    let counter = 1
+    for (let obj of $($('img', '.thumb-container')).toArray()) {
       let imageType = $(obj).attr('data-src')?.match(/\.([png|jpg]{3,3})/g)![0]
       pages.push(`https://i.nhentai.net/galleries/${galleryId}/${counter}${imageType}`)
       counter++
-     }
+    }
 
     let chapterDetails = createChapterDetails({
       id: metadata.chapterId,
@@ -204,7 +204,7 @@ export class NHentai extends Source {
   searchRequest(query: SearchRequest): Request | null {
 
     // If h-sources are disabled for the search request, always return null
-    if(query.hStatus === false) {
+    if (query.hStatus === false) {
       return null
     }
 
@@ -320,7 +320,7 @@ export class NHentai extends Source {
   getTags(data: any): TagSection[] | null {
     let tagCategoryId = 'Popular'     // There are no tag categories, just 'tags', as we're parsing the first page of popular tags, just label it as popular
     let tagLabel = 'Popular'
-    let tagSection : TagSection = createTagSection({
+    let tagSection: TagSection = createTagSection({
       id: tagCategoryId,
       label: tagLabel,
       tags: []
@@ -329,7 +329,7 @@ export class NHentai extends Source {
     let $ = this.cheerio.load(data)
     let container = $("#tag-container")
 
-    for(let item of $('a', container).toArray()) {
+    for (let item of $('a', container).toArray()) {
       let currNode = $(item)
 
       // Grab the tag and add it to the list
@@ -350,18 +350,23 @@ export class NHentai extends Source {
   getHomePageSectionRequest(): HomeSectionRequest[] | null {
 
     let request = createRequestObject({ url: `${NHENTAI_DOMAIN}`, method: 'GET', })
-    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
-      url: `${NHENTAI_DOMAIN}/?page=1`,
-      method: 'GET',
-      metadata: {
-        page: 1
-      }
-    }) })
+    let homeSection = createHomeSection({
+      id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
+        url: `${NHENTAI_DOMAIN}/?page=1`,
+        method: 'GET',
+        metadata: {
+          page: 1
+        }
+      })
+    })
     return [createHomeSectionRequest({ request: request, sections: [homeSection] })]
 
   }
 
   getViewMoreItems(data: string, key: string, metadata: any): PagedResults {
+
+    // Debug out to console that this event occured
+    console.log(`getViewMoreItems request made to ${NHENTAI_DOMAIN}/?page=${metadata.page}`)
 
     let $ = this.cheerio.load(data)
     metadata.page = metadata.page + 1
@@ -393,11 +398,10 @@ export class NHentai extends Source {
 
       returnObject.results.push(createMangaTile({
         id: idHref[1],
-        title: createIconText({text: title}),
+        title: createIconText({ text: title }),
         image: image
       }))
     }
-
     return returnObject
 
   }
@@ -424,7 +428,7 @@ export class NHentai extends Source {
 
       updatedHentai.push(createMangaTile({
         id: idHref[1],
-        title: createIconText({text: title}),
+        title: createIconText({ text: title }),
         image: image
       }))
     }

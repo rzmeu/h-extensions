@@ -2681,7 +2681,7 @@ class NHentai extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.8.8'; }
+    get version() { return '0.9.0'; }
     get name() { return 'nHentai'; }
     get description() { return 'Extension that pulls manga from nHentai'; }
     get author() { return 'Conrad Weiser'; }
@@ -2968,8 +2968,46 @@ class NHentai extends paperback_extensions_common_1.Source {
     }
     getHomePageSectionRequest() {
         let request = createRequestObject({ url: `${NHENTAI_DOMAIN}`, method: 'GET', });
-        let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' });
+        let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
+                url: `${NHENTAI_DOMAIN}/?page=1`,
+                method: 'GET',
+                metadata: {
+                    page: 1
+                }
+            }) });
         return [createHomeSectionRequest({ request: request, sections: [homeSection] })];
+    }
+    getViewMoreItems(data, key, metadata) {
+        var _a;
+        let $ = this.cheerio.load(data);
+        metadata.page = metadata.page + 1;
+        var returnObject = createPagedResults({
+            results: [],
+            nextPage: createRequestObject({
+                url: `${NHENTAI_DOMAIN}/?page=${metadata.page}`,
+                method: 'get',
+                metadata: metadata
+            })
+        });
+        let containerNode = $('.index-container');
+        for (let item of $('.gallery', containerNode).toArray()) {
+            let currNode = $(item);
+            let image = $('img', currNode).attr('data-src');
+            // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
+            if (image == undefined) {
+                image = 'http:' + $('img', currNode).attr('src');
+            }
+            // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+            let title = $('.caption', currNode).text();
+            title = title.replace(/(\[.+?\])/g, "").trim();
+            let idHref = (_a = $('a', currNode).attr('href')) === null || _a === void 0 ? void 0 : _a.match(/\/(\d*)\//);
+            returnObject.results.push(createMangaTile({
+                id: idHref[1],
+                title: createIconText({ text: title }),
+                image: image
+            }));
+        }
+        return returnObject;
     }
     getHomePageSections(data, section) {
         var _a;
@@ -2995,12 +3033,6 @@ class NHentai extends paperback_extensions_common_1.Source {
         }
         section[0].items = updatedHentai;
         return section;
-    }
-    getViewMoreRequest(key, page) {
-        return createRequestObject({
-            url: `${NHENTAI_DOMAIN}/?page=${page}`,
-            method: 'GET'
-        });
     }
 }
 exports.NHentai = NHentai;

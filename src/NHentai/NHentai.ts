@@ -7,7 +7,7 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.8' }
+  get version(): string { return '0.9.0' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -347,12 +347,58 @@ export class NHentai extends Source {
   }
 
 
-
   getHomePageSectionRequest(): HomeSectionRequest[] | null {
 
     let request = createRequestObject({ url: `${NHENTAI_DOMAIN}`, method: 'GET', })
-    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })
+    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
+      url: `${NHENTAI_DOMAIN}/?page=1`,
+      method: 'GET',
+      metadata: {
+        page: 1
+      }
+    }) })
     return [createHomeSectionRequest({ request: request, sections: [homeSection] })]
+
+  }
+
+  getViewMoreItems(data: string, key: string, metadata: any): PagedResults {
+
+    let $ = this.cheerio.load(data)
+    metadata.page = metadata.page + 1
+
+    var returnObject: PagedResults = createPagedResults({
+      results: [],
+      nextPage: createRequestObject({
+        url: `${NHENTAI_DOMAIN}/?page=${metadata.page}`,
+        method: 'get',
+        metadata: metadata
+      })
+    })
+
+    let containerNode = $('.index-container')
+    for (let item of $('.gallery', containerNode).toArray()) {
+      let currNode = $(item)
+      let image = $('img', currNode).attr('data-src')!
+
+      // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
+      if (image == undefined) {
+        image = 'http:' + $('img', currNode).attr('src')!
+      }
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      let title = $('.caption', currNode).text()
+      title = title.replace(/(\[.+?\])/g, "").trim()
+
+      let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
+
+      returnObject.results.push(createMangaTile({
+        id: idHref[1],
+        title: createIconText({text: title}),
+        image: image
+      }))
+    }
+
+    return returnObject
 
   }
 
@@ -386,13 +432,4 @@ export class NHentai extends Source {
     section[0].items = updatedHentai
     return section
   }
-
-  getViewMoreRequest(key: string, page: number): Request | null {
-    return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/?page=${page}`,
-      method: 'GET'
-    })
-  }
-
-
 }

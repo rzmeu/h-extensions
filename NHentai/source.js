@@ -2681,7 +2681,7 @@ class NHentai extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.9.0'; }
+    get version() { return '0.9.1'; }
     get name() { return 'nHentai'; }
     get description() { return 'Extension that pulls manga from nHentai'; }
     get author() { return 'Conrad Weiser'; }
@@ -2968,17 +2968,21 @@ class NHentai extends paperback_extensions_common_1.Source {
     }
     getHomePageSectionRequest() {
         let request = createRequestObject({ url: `${NHENTAI_DOMAIN}`, method: 'GET', });
-        let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
+        let homeSection = createHomeSection({
+            id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
                 url: `${NHENTAI_DOMAIN}/?page=1`,
                 method: 'GET',
                 metadata: {
                     page: 1
                 }
-            }) });
+            })
+        });
         return [createHomeSectionRequest({ request: request, sections: [homeSection] })];
     }
     getViewMoreItems(data, key, metadata) {
         var _a;
+        // Debug out to console that this event occured
+        console.log(`getViewMoreItems request made to ${NHENTAI_DOMAIN}/?page=${metadata.page}`);
         let $ = this.cheerio.load(data);
         metadata.page = metadata.page + 1;
         var returnObject = createPagedResults({

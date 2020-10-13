@@ -2681,7 +2681,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.2'; }
+    get version() { return '1.1.21'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
@@ -2855,7 +2855,6 @@ class Toonily extends paperback_extensions_common_1.Source {
         var _a, _b, _c;
         let $ = this.cheerio.load(data);
         let results = [];
-        metadata.page = metadata.page++;
         let returnObject = createPagedResults({
             results: [],
             nextPage: undefined
@@ -2883,6 +2882,7 @@ class Toonily extends paperback_extensions_common_1.Source {
         let lastPageContext = $('a', $(naviContext));
         let lastPage = Number((_c = $(lastPageContext.toArray().slice(-1)[0]).attr('href')) === null || _c === void 0 ? void 0 : _c.replace(/\D/g, ''));
         if (currPage < lastPage) {
+            metadata.page = metadata.page + 1;
             returnObject.nextPage = createRequestObject({
                 url: `${TOONILY_DOMAIN}/page/${metadata.page}`,
                 method: 'GET',

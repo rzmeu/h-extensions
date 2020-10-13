@@ -8,7 +8,7 @@ export class Toonily extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.1.1' }
+  get version(): string { return '1.1.2' }
   get name(): string { return 'Toonily' }
   get description(): string { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.' }
   get author(): string { return 'Conrad Weiser' }
@@ -256,6 +256,8 @@ export class Toonily extends Source {
         method: 'GET',
         metadata: metadata
       })
+
+      console.log(`Requesting view more for ${TOONILY_DOMAIN}/page/${metadata.page}`)
     }
 
     returnObject.results = results

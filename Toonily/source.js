@@ -2681,7 +2681,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.0'; }
+    get version() { return '1.1.1'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
@@ -2842,8 +2842,55 @@ class Toonily extends paperback_extensions_common_1.Source {
     }
     getHomePageSectionRequest() {
         let request = createRequestObject({ url: `${TOONILY_DOMAIN}`, method: 'GET' });
-        let latestUpdatesSection = createHomeSection({ id: 'latest_updates', title: 'LATEST UPDATES' });
+        let latestUpdatesSection = createHomeSection({ id: 'latest_updates', title: 'LATEST UPDATES', view_more: createRequestObject({
+                url: `${TOONILY_DOMAIN}`,
+                method: 'GET',
+                metadata: {
+                    page: 1
+                }
+            }) });
         return [createHomeSectionRequest({ request: request, sections: [latestUpdatesSection] })];
+    }
+    getViewMoreItems(data, key, metadata) {
+        var _a, _b, _c;
+        let $ = this.cheerio.load(data);
+        let results = [];
+        metadata.page = metadata.page++;
+        let returnObject = createPagedResults({
+            results: [],
+            nextPage: undefined
+        });
+        for (let row of $('.page-listing-item').toArray()) {
+            for (let obj of $('.col-6', $(row)).toArray()) {
+                let id = (_a = $('a', $('.item-thumb', $(obj))).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');
+                let title = (_b = $('a', $('.item-thumb', $(obj))).attr('title')) === null || _b === void 0 ? void 0 : _b.trim();
+                let image = $('img', $(obj)).attr('data-src');
+                let rating = $('.total_votes', $(obj)).text().trim();
+                if (!title || !image || !id) {
+                    continue;
+                }
+                results.push(createMangaTile({
+                    id: id,
+                    title: createIconText({ text: title }),
+                    image: image,
+                    primaryText: createIconText({ text: rating, icon: 'star.fill' })
+                }));
+            }
+        }
+        // Are we at the last page?
+        let naviContext = $('.wp-pagenavi');
+        let currPage = Number($('.current', $(naviContext)).text().replace(/\D/g, ''));
+        let lastPageContext = $('a', $(naviContext));
+        let lastPage = Number((_c = $(lastPageContext.toArray().slice(-1)[0]).attr('href')) === null || _c === void 0 ? void 0 : _c.replace(/\D/g, ''));
+        if (currPage < lastPage) {
+            returnObject.nextPage = createRequestObject({
+                url: `${TOONILY_DOMAIN}/page/${metadata.page}`,
+                method: 'GET',
+                metadata: metadata
+            });
+        }
+        returnObject.results = results;
+        return returnObject;
     }
     getHomePageSections(data, section) {
         var _a, _b;

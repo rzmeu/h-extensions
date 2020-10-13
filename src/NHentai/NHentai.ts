@@ -7,7 +7,7 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.9.1' }
+  get version(): string { return '0.9.2' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -355,7 +355,7 @@ export class NHentai extends Source {
         url: `${NHENTAI_DOMAIN}/?page=1`,
         method: 'GET',
         metadata: {
-          page: 1
+          page: 2
         }
       })
     })

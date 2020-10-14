@@ -2910,6 +2910,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         var _a, _b, _c;
         let $ = this.cheerio.load(data);
         let results = [];
+        console.log(`Made a view more request to: https://manhwa18.com/manga-list.html?listType=pagination&page=${metadata.page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`);
         var returnObject = createPagedResults({
             results: results,
             nextPage: undefined
@@ -2927,6 +2928,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
             });
         }
         for (let obj of $('.row-list').toArray()) {
+            console.log("Processing view more object");
             let title = (_a = $('a', $('.media-heading', $(obj))).text()) !== null && _a !== void 0 ? _a : '';
             let id = (_b = $('a', $('.media-heading', $(obj))).attr('href')) !== null && _b !== void 0 ? _b : '';
             let img = (_c = `${ME_DOMAIN}${$('img', $(obj)).attr('src')}`) !== null && _c !== void 0 ? _c : '';

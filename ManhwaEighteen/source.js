@@ -2681,7 +2681,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.6.1'; }
+    get version() { return '0.7.0'; }
     get name() { return 'Manhwa18 (18+)'; }
     get description() { return 'Extension that pulls manga from Manhwa18'; }
     get author() { return 'Conrad Weiser'; }
@@ -2895,8 +2895,52 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
     }
     getHomePageSectionRequest() {
         let request = createRequestObject({ url: `${ME_DOMAIN}`, method: 'GET' });
-        let section1 = createHomeSection({ id: 'latest_release', title: 'Latest Manhwa Releases' });
+        let section1 = createHomeSection({
+            id: 'latest_release', title: 'Latest Manhwa Releases', view_more: createRequestObject({
+                url: `https://manhwa18.com/manga-list.html?listType=pagination&page=1&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`,
+                method: 'GET',
+                metadata: {
+                    page: 1
+                }
+            })
+        });
         return [createHomeSectionRequest({ request: request, sections: [section1] })];
+    }
+    getViewMoreItems(data, key, metadata) {
+        var _a, _b, _c;
+        let $ = this.cheerio.load(data);
+        let results = [];
+        var returnObject = createPagedResults({
+            results: results,
+            nextPage: undefined
+        });
+        // Check if this is the last page, if not, generate a newPage request for this call
+        let pagnationContextArray = $('li', $('.pagination-wrap')).toArray();
+        let lastPageAvailable = Number($('a', $(pagnationContextArray[pagnationContextArray.length - 2])).text());
+        if (lastPageAvailable != undefined && (metadata.page + 1) != lastPageAvailable) {
+            // Set the nextPage
+            metadata.page = metadata.page + 1;
+            returnObject.nextPage = createRequestObject({
+                url: `https://manhwa18.com/manga-list.html?listType=pagination&page=${metadata.page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`,
+                method: 'GET',
+                metadata: metadata
+            });
+        }
+        for (let obj of $('.row-list').toArray()) {
+            let title = (_a = $('a', $('.media-heading', $(obj))).text()) !== null && _a !== void 0 ? _a : '';
+            let id = (_b = $('a', $('.media-heading', $(obj))).attr('href')) !== null && _b !== void 0 ? _b : '';
+            let img = (_c = `${ME_DOMAIN}${$('img', $(obj)).attr('src')}`) !== null && _c !== void 0 ? _c : '';
+            let textContext = $('.media-body', $(obj));
+            let primaryText = createIconText({ text: $('span', textContext).text() });
+            id = id.replace(".html", "");
+            returnObject.results.push(createMangaTile({
+                title: createIconText({ text: title }),
+                id: id,
+                image: img,
+                primaryText: primaryText
+            }));
+        }
+        return returnObject;
     }
     getHomePageSections(data, sections) {
         var _a;
@@ -2920,6 +2964,55 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         }
         sections[0].items = latestManga;
         return sections;
+    }
+    filterUpdatedMangaRequest(ids, time) {
+        let metadata = { 'ids': ids, referenceTime: time, page: 1 };
+        return createRequestObject({
+            url: `${ME_DOMAIN}/index.html`,
+            method: 'GET',
+            metadata: metadata
+        });
+    }
+    filterUpdatedManga(data, metadata) {
+        var _a;
+        let $ = this.cheerio.load(data);
+        //MW18 is kinda sketchy where the only place that shows update times is the main page. We'll do the best we can.
+        let returnObject = {
+            ids: []
+        };
+        for (let content of $('#contentstory').toArray()) {
+            for (let item of $('.itemupdate', $(content)).toArray()) {
+                let id = (_a = $('a', $(item)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(".html", "");
+                let dateUpdated = $('time', $(item)).text().trim();
+                let date;
+                // Was this updated minutes ago?
+                if (dateUpdated.includes("minutes")) {
+                    let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ''));
+                    date = new Date();
+                    date.setMinutes(date.getMinutes() - parsedDateNumeric);
+                }
+                // Was it hours ago?
+                else if (dateUpdated.includes("hours")) {
+                    let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ''));
+                    date = new Date();
+                    date.setHours(date.getHours() - parsedDateNumeric);
+                }
+                // Otherwise it was days
+                else {
+                    let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ''));
+                    date = new Date();
+                    date.setDate(date.getDate() - parsedDateNumeric);
+                }
+                if (!id) {
+                    continue;
+                }
+                // If this was before our reference time, add it to the list of updates
+                if (date < metadata.referenceTime) {
+                    returnObject.ids.push(id);
+                }
+            }
+        }
+        return returnObject;
     }
 }
 exports.ManhwaEighteen = ManhwaEighteen;

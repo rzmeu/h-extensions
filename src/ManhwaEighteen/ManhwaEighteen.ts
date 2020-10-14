@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.31' }
+  get version(): string { return '0.7.4' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -196,8 +196,18 @@ export class ManhwaEighteen extends Source {
     let $ = this.cheerio.load(data)
     let pages: string[] = []
 
-    for (let obj of $('img', $('.chapter-content')).toArray()) {
-      pages.push($(obj).attr('src')!.trim())
+    let containerHead = $('.chapter-content').toArray()
+    for (let obj of $('img', containerHead[containerHead.length - 1]).toArray()) {
+      let pageUrl = $(obj).attr('src')!.trim()
+      // If the page URL is missing 
+      if(pageUrl.includes(`${ME_DOMAIN}`)) {
+        pages.push(pageUrl)
+      }
+
+      else {
+        // Append it manually
+        pages.push(`${ME_DOMAIN}/${pageUrl}`)
+      }
     }
 
     metadata.chapterId = metadata.chapterId.replace(".html", "")

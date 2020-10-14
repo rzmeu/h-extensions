@@ -1,6 +1,6 @@
 import cheerio from 'cheerio'
-import { ManhwaEighteen } from "../sources/ManhwaEighteen/ManhwaEighteen";
 import { APIWrapper, Source } from 'paperback-extensions-common';
+import { ManhwaEighteen } from '../ManhwaEighteen/ManhwaEighteen';
 
 describe('ManhwaEighteen Tests', function () {
 
@@ -15,7 +15,7 @@ describe('ManhwaEighteen Tests', function () {
      * Try to choose a manga which is updated frequently, so that the historical checking test can 
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "manga-young-boss-raw";
+    var mangaId = "manga-sister-neighbors-magicmanscans";
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, [mangaId]);

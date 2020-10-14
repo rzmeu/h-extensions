@@ -2928,13 +2928,13 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
             });
         }
         for (let obj of $('.row-list').toArray()) {
-            console.log("Processing view more object");
             let title = (_a = $('a', $('.media-heading', $(obj))).text()) !== null && _a !== void 0 ? _a : '';
             let id = (_b = $('a', $('.media-heading', $(obj))).attr('href')) !== null && _b !== void 0 ? _b : '';
             let img = (_c = `${ME_DOMAIN}${$('img', $(obj)).attr('src')}`) !== null && _c !== void 0 ? _c : '';
             let textContext = $('.media-body', $(obj));
             let primaryText = createIconText({ text: $('span', textContext).text() });
             id = id.replace(".html", "");
+            console.log(`Processing view more object with ID: ${id}`);
             returnObject.results.push(createMangaTile({
                 title: createIconText({ text: title }),
                 id: id,

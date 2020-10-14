@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.1' }
+  get version(): string { return '0.7.3' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -277,6 +277,26 @@ export class ManhwaEighteen extends Source {
 
     console.log(`Made a view more request to: https://manhwa18.com/manga-list.html?listType=pagination&page=${metadata.page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`)
 
+    for (let obj of $('.row-list').toArray()) {
+
+      let title = $('a', $('.media-heading', $(obj))).text() ?? ''
+      let id = $('a', $('.media-heading', $(obj))).attr('href') ?? ''
+      let img = `${ME_DOMAIN}${$('img', $(obj)).attr('src')}` ?? ''
+      let textContext = $('.media-body', $(obj))
+      let primaryText = createIconText({ text: $('span', textContext).text() })
+
+      id = id.replace(".html", "")
+
+      console.log(`Processing view more object with ID: ${id}`)
+
+      results.push(createMangaTile({
+        title: createIconText({ text: title }),
+        id: id,
+        image: img,
+        primaryText: primaryText
+      }))
+    }
+
     var returnObject = createPagedResults({
       results: results,
       nextPage: undefined
@@ -297,25 +317,8 @@ export class ManhwaEighteen extends Source {
       })
     }
 
-    for (let obj of $('.row-list').toArray()) {
+    console.log(`${results}`)
 
-      let title = $('a', $('.media-heading', $(obj))).text() ?? ''
-      let id = $('a', $('.media-heading', $(obj))).attr('href') ?? ''
-      let img = `${ME_DOMAIN}${$('img', $(obj)).attr('src')}` ?? ''
-      let textContext = $('.media-body', $(obj))
-      let primaryText = createIconText({ text: $('span', textContext).text() })
-
-      id = id.replace(".html", "")
-
-      console.log(`Processing view more object with ID: ${id}`)
-
-      returnObject.results.push(createMangaTile({
-        title: createIconText({ text: title }),
-        id: id,
-        image: img,
-        primaryText: primaryText
-      }))
-    }
 
     return returnObject
 
@@ -376,7 +379,7 @@ export class ManhwaEighteen extends Source {
         let date: Date
 
         // Was this updated minutes ago?
-        if(dateUpdated.includes("minutes")) {
+        if (dateUpdated.includes("minutes")) {
           let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ''))
           date = new Date()
           date.setMinutes(date.getMinutes() - parsedDateNumeric)
@@ -395,13 +398,13 @@ export class ManhwaEighteen extends Source {
           date = new Date()
           date.setDate(date.getDate() - parsedDateNumeric)
         }
-  
+
         if (!id) {
           continue
         }
 
         // If this was before our reference time, add it to the list of updates
-        if(date < metadata.referenceTime) {
+        if (date < metadata.referenceTime) {
           returnObject.ids.push(id)
         }
 

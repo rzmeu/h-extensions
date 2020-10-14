@@ -275,6 +275,8 @@ export class ManhwaEighteen extends Source {
     let $ = this.cheerio.load(data)
     let results: MangaTile[] = []
 
+    console.log(`Made a view more request to: https://manhwa18.com/manga-list.html?listType=pagination&page=${metadata.page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`)
+
     var returnObject = createPagedResults({
       results: results,
       nextPage: undefined
@@ -296,6 +298,9 @@ export class ManhwaEighteen extends Source {
     }
 
     for (let obj of $('.row-list').toArray()) {
+
+      console.log("Processing view more object")
+
       let title = $('a', $('.media-heading', $(obj))).text() ?? ''
       let id = $('a', $('.media-heading', $(obj))).attr('href') ?? ''
       let img = `${ME_DOMAIN}${$('img', $(obj)).attr('src')}` ?? ''

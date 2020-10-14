@@ -299,8 +299,6 @@ export class ManhwaEighteen extends Source {
 
     for (let obj of $('.row-list').toArray()) {
 
-      console.log("Processing view more object")
-
       let title = $('a', $('.media-heading', $(obj))).text() ?? ''
       let id = $('a', $('.media-heading', $(obj))).attr('href') ?? ''
       let img = `${ME_DOMAIN}${$('img', $(obj)).attr('src')}` ?? ''
@@ -308,6 +306,8 @@ export class ManhwaEighteen extends Source {
       let primaryText = createIconText({ text: $('span', textContext).text() })
 
       id = id.replace(".html", "")
+
+      console.log(`Processing view more object with ID: ${id}`)
 
       returnObject.results.push(createMangaTile({
         title: createIconText({ text: title }),

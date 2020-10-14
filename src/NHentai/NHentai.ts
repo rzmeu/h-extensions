@@ -7,7 +7,7 @@ export class NHentai extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.9.2' }
+  get version(): string { return '0.9.3' }
   get name(): string { return 'nHentai' }
   get description(): string { return 'Extension that pulls manga from nHentai' }
   get author(): string { return 'Conrad Weiser' }
@@ -371,14 +371,7 @@ export class NHentai extends Source {
     let $ = this.cheerio.load(data)
     metadata.page = metadata.page + 1
 
-    var returnObject: PagedResults = createPagedResults({
-      results: [],
-      nextPage: createRequestObject({
-        url: `${NHENTAI_DOMAIN}/?page=${metadata.page}`,
-        method: 'get',
-        metadata: metadata
-      })
-    })
+    let discoveredObjects: MangaTile[] = []
 
     let containerNode = $('.index-container')
     for (let item of $('.gallery', containerNode).toArray()) {
@@ -396,13 +389,24 @@ export class NHentai extends Source {
 
       let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
 
-      returnObject.results.push(createMangaTile({
+      console.log(`[LOG] Discovered ${idHref[1]} in getViewMoreItems`)
+
+      discoveredObjects.push(createMangaTile({
         id: idHref[1],
         title: createIconText({ text: title }),
         image: image
       }))
     }
-    return returnObject
+
+
+    return createPagedResults({
+      results: discoveredObjects,
+        nextPage: createRequestObject({
+        url: `${NHENTAI_DOMAIN}/?page=${metadata.page}`,
+        method: 'get',
+        metadata: metadata
+      })
+    })
 
   }
 

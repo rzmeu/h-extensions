@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.3' }
+  get version(): string { return '0.7.31' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }

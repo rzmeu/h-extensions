@@ -2681,7 +2681,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.51'; }
+    get version() { return '0.7.52'; }
     get name() { return 'Manhwa18 (18+)'; }
     get description() { return 'Extension that pulls manga from Manhwa18'; }
     get author() { return 'Conrad Weiser'; }
@@ -2714,7 +2714,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         let lang;
         let image;
         let imageBase = $('.thumbnail').attr('src');
-        if (imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('manhwa18')) {
+        if ((imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('manhwa18')) || (imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('smurfs.toptoon'))) {
             image = imageBase;
         }
         else {
@@ -2856,7 +2856,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         for (let obj of $('img', containerHead[containerHead.length - 1]).toArray()) {
             let pageUrl = $(obj).attr('src').trim();
             // If the page URL is missing 
-            if (pageUrl.includes(`manhwa18`)) {
+            if (pageUrl.includes(`manhwa18`) || pageUrl.includes('i.ibb')) {
                 pages.push(pageUrl);
             }
             else {
@@ -2972,7 +2972,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
             let imageBase = $('.lazy', $(item)).attr('src');
             let views = $('.view', $(item)).text();
             let image;
-            if (imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('manhwa18')) {
+            if ((imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('manhwa18')) || (imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('smurfs.toptoon'))) {
                 image = imageBase;
             }
             else {

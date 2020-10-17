@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.5' }
+  get version(): string { return '0.7.51' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -350,8 +350,16 @@ export class ManhwaEighteen extends Source {
     for (let item of $('.itemupdate', $(context)).toArray()) {
       let id = $('a', $(item)).attr('href')?.replace(".html", "")
       let title = createIconText({ text: $('.title-h3', $(item)).text() })
-      let image = `${ME_DOMAIN}${$('.lazy', $(item)).attr('src')}`
+      let imageBase = $('.lazy', $(item)).attr('src')
       let views = $('.view', $(item)).text()
+      let image
+
+      if(imageBase?.includes('manhwa18')) {
+        image = imageBase
+      }
+      else {
+        image = `${ME_DOMAIN}${imageBase}`
+      }
 
       if (!id) {
         continue

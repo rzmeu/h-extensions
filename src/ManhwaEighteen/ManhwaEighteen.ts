@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.4' }
+  get version(): string { return '0.7.5' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -41,7 +41,15 @@ export class ManhwaEighteen extends Source {
     let status: MangaStatus = MangaStatus.ONGOING   // Default to ongoing
     let views
     let lang
-    let image = `${ME_DOMAIN}${$('.thumbnail').attr('src')}`
+    let image
+
+    let imageBase = $('.thumbnail').attr('src')
+    if(imageBase?.includes('manhwa18')) {
+      image = imageBase
+    }
+    else {
+      image = `${ME_DOMAIN}${imageBase}`
+    }
 
     let objContext = $('li', $('.manga-info')).toArray()
     for (let i = 0; i < objContext.length; i++) {
@@ -200,7 +208,7 @@ export class ManhwaEighteen extends Source {
     for (let obj of $('img', containerHead[containerHead.length - 1]).toArray()) {
       let pageUrl = $(obj).attr('src')!.trim()
       // If the page URL is missing 
-      if(pageUrl.includes(`${ME_DOMAIN}`)) {
+      if(pageUrl.includes(`manhwa18`)) {
         pages.push(pageUrl)
       }
 

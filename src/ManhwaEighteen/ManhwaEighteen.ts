@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.51' }
+  get version(): string { return '0.7.52' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -44,7 +44,7 @@ export class ManhwaEighteen extends Source {
     let image
 
     let imageBase = $('.thumbnail').attr('src')
-    if(imageBase?.includes('manhwa18')) {
+    if(imageBase?.includes('manhwa18') || imageBase?.includes('smurfs.toptoon')) {
       image = imageBase
     }
     else {
@@ -208,7 +208,7 @@ export class ManhwaEighteen extends Source {
     for (let obj of $('img', containerHead[containerHead.length - 1]).toArray()) {
       let pageUrl = $(obj).attr('src')!.trim()
       // If the page URL is missing 
-      if(pageUrl.includes(`manhwa18`)) {
+      if(pageUrl.includes(`manhwa18`) || pageUrl.includes('i.ibb')) {
         pages.push(pageUrl)
       }
 
@@ -354,7 +354,7 @@ export class ManhwaEighteen extends Source {
       let views = $('.view', $(item)).text()
       let image
 
-      if(imageBase?.includes('manhwa18')) {
+      if(imageBase?.includes('manhwa18') || imageBase?.includes('smurfs.toptoon')) {
         image = imageBase
       }
       else {

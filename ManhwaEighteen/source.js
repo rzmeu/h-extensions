@@ -2681,7 +2681,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.4'; }
+    get version() { return '0.7.5'; }
     get name() { return 'Manhwa18 (18+)'; }
     get description() { return 'Extension that pulls manga from Manhwa18'; }
     get author() { return 'Conrad Weiser'; }
@@ -2712,7 +2712,14 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         let status = paperback_extensions_common_1.MangaStatus.ONGOING; // Default to ongoing
         let views;
         let lang;
-        let image = `${ME_DOMAIN}${$('.thumbnail').attr('src')}`;
+        let image;
+        let imageBase = $('.thumbnail').attr('src');
+        if (imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('manhwa18')) {
+            image = imageBase;
+        }
+        else {
+            image = `${ME_DOMAIN}${imageBase}`;
+        }
         let objContext = $('li', $('.manga-info')).toArray();
         for (let i = 0; i < objContext.length; i++) {
             switch (i) {
@@ -2849,7 +2856,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         for (let obj of $('img', containerHead[containerHead.length - 1]).toArray()) {
             let pageUrl = $(obj).attr('src').trim();
             // If the page URL is missing 
-            if (pageUrl.includes(`${ME_DOMAIN}`)) {
+            if (pageUrl.includes(`manhwa18`)) {
                 pages.push(pageUrl);
             }
             else {

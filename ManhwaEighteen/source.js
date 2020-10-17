@@ -2681,7 +2681,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.5'; }
+    get version() { return '0.7.51'; }
     get name() { return 'Manhwa18 (18+)'; }
     get description() { return 'Extension that pulls manga from Manhwa18'; }
     get author() { return 'Conrad Weiser'; }
@@ -2969,8 +2969,15 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         for (let item of $('.itemupdate', $(context)).toArray()) {
             let id = (_a = $('a', $(item)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(".html", "");
             let title = createIconText({ text: $('.title-h3', $(item)).text() });
-            let image = `${ME_DOMAIN}${$('.lazy', $(item)).attr('src')}`;
+            let imageBase = $('.lazy', $(item)).attr('src');
             let views = $('.view', $(item)).text();
+            let image;
+            if (imageBase === null || imageBase === void 0 ? void 0 : imageBase.includes('manhwa18')) {
+                image = imageBase;
+            }
+            else {
+                image = `${ME_DOMAIN}${imageBase}`;
+            }
             if (!id) {
                 continue;
             }

@@ -2676,7 +2676,7 @@ process.umask = function() { return 0; };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ToonilyRedirected = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
-const TOONILY_DOMAIN = 'http://paperback-redirector.herokuapp.com/ty';
+const TOONILY_DOMAIN = 'https://paperback-redirector.herokuapp.com/ty';
 class ToonilyRedirected extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
@@ -2723,7 +2723,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
         // Get all of the tags
         let tags = [];
         for (let obj of $('a', $('.genres-content')).toArray()) {
-            let tagId = (_a = $(obj).attr('href')) === null || _a === void 0 ? void 0 : _a.replace('https://toonily.com/webtoon-genre/', '').replace('/', '');
+            let tagId = (_a = $(obj).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/site/webtoon-genre`, '').replace('/', '');
             let tagName = $(obj).text();
             if (!tagId || !tagName) {
                 continue;
@@ -2762,7 +2762,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
         let $ = this.cheerio.load(data);
         let chapters = [];
         for (let obj of $('.wp-manga-chapter  ').toArray()) {
-            let id = (_a = $('a', $(obj)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/${metadata.id}/`, '').replace('/', '');
+            let id = (_a = $('a', $(obj)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/site/webtoon/${metadata.id}/`, '').replace('/', '');
             let chapNum = Number(/(\d+)/g.exec($('a', $(obj)).text())[1]);
             let date = new Date($('i', $(obj)).text());
             chapters.push(createChapter({
@@ -2815,7 +2815,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
         query.title = (_a = query.title) === null || _a === void 0 ? void 0 : _a.replace(" ", "+");
         return createRequestObject({
             //https://toonily.com/?s=Hero&post_type=wp-manga
-            url: `${TOONILY_DOMAIN}/?s=${query.title}&post_type=wp-manga`,
+            url: `${TOONILY_DOMAIN}/site/?s=${query.title}&post_type=wp-manga`,
             timeout: 4000,
             method: "GET"
         });
@@ -2825,7 +2825,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
         let $ = this.cheerio.load(data);
         let mangaTiles = [];
         for (let obj of $('.row', $('.c-tabs-item')).toArray()) {
-            let id = (_a = $('a', $(obj)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');
+            let id = (_a = $('a', $(obj)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/site/webtoon/`, '').replace('/', '');
             let title = $('a', $(obj)).attr('title');
             let image = $('img', $(obj)).attr('data-src');
             let rating = $('.total_votes', $(obj)).text().trim();
@@ -2843,7 +2843,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
     getHomePageSectionRequest() {
         let request = createRequestObject({ url: `${TOONILY_DOMAIN}`, method: 'GET' });
         let latestUpdatesSection = createHomeSection({ id: 'latest_updates', title: 'LATEST UPDATES', view_more: createRequestObject({
-                url: `${TOONILY_DOMAIN}/site`,
+                url: `${TOONILY_DOMAIN}/site/`,
                 method: 'GET',
                 metadata: {
                     page: 1

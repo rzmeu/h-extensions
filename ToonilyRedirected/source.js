@@ -2681,7 +2681,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.3'; }
+    get version() { return '1.1.31'; }
     get name() { return 'Toonily (Geo-Unlocked)'; }
     get description() { return 'Toonily source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }
@@ -2841,7 +2841,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
         });
     }
     getHomePageSectionRequest() {
-        let request = createRequestObject({ url: `${TOONILY_DOMAIN}`, method: 'GET' });
+        let request = createRequestObject({ url: `${TOONILY_DOMAIN}/site/`, method: 'GET' });
         let latestUpdatesSection = createHomeSection({ id: 'latest_updates', title: 'LATEST UPDATES', view_more: createRequestObject({
                 url: `${TOONILY_DOMAIN}/site/`,
                 method: 'GET',
@@ -2899,7 +2899,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
         let latestUpdates = [];
         for (let row of $('.page-listing-item').toArray()) {
             for (let obj of $('.col-6', $(row)).toArray()) {
-                let id = (_a = $('a', $('.item-thumb', $(obj))).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');
+                let id = (_a = $('a', $('.item-thumb', $(obj))).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/site/webtoon/`, '').replace('/', '');
                 let title = (_b = $('a', $('.item-thumb', $(obj))).attr('title')) === null || _b === void 0 ? void 0 : _b.trim();
                 let image = $('img', $(obj)).attr('data-src');
                 let rating = $('.total_votes', $(obj)).text().trim();

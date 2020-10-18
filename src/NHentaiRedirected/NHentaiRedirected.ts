@@ -2,30 +2,29 @@
 import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType, PagedResults } from "paperback-extensions-common"
 
 const NHENTAI_DOMAIN = 'http://paperback-redirector.herokuapp.com/nh'
-const DEFAULT_DOMAIN = 'https://nhentai.net'
 
 export class NHentaiRedirected extends Source {
   constructor(cheerio: CheerioAPI) {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.6' }
-  get name(): string { return 'nHentai (Geo-Unlocked)' }
+  get version(): string { return '0.8.5' }
+  get name(): string { return 'nHentai (Country-Proof)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
   get authorWebsite(): string { return 'http:github.com/conradweiser'}
   get icon(): string { return "logo.png" }
   get hentaiSource(): boolean { return true }
-  getMangaShareUrl(mangaId: string): string | null { return `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${mangaId}`}
+  getMangaShareUrl(mangaId: string): string | null { return `${NHENTAI_DOMAIN}/g/${mangaId}`}
   get sourceTags(): SourceTag[] {return [{text: "18+", type: TagType.YELLOW}]}
-  get websiteBaseURL(): string { return `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}` }
+  get websiteBaseURL(): string { return NHENTAI_DOMAIN }
 
   getMangaDetailsRequest(ids: string[]): Request[] {
     let requests: Request[] = []
     for (let id of ids) {
       let metadata = { 'id': id }
       requests.push(createRequestObject({
-        url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${id}/`,
+        url: `${NHENTAI_DOMAIN}/g/${id}/`,
         metadata: metadata,
         method: 'GET'
       }))
@@ -106,7 +105,7 @@ export class NHentaiRedirected extends Source {
   getChaptersRequest(mangaId: string): Request {
     let metadata = { 'id': mangaId }
     return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${mangaId}/`,
+      url: `${NHENTAI_DOMAIN}/g/${mangaId}/`,
       method: "GET",
       metadata: metadata
     })
@@ -158,7 +157,7 @@ export class NHentaiRedirected extends Source {
   getChapterDetailsRequest(mangaId: string, chapId: string): Request {
     let metadata = { 'mangaId': mangaId, 'chapterId': chapId }
     return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${mangaId}/`,
+      url: `${NHENTAI_DOMAIN}/g/${mangaId}/`,
       metadata: metadata,
       method: 'GET',
     })
@@ -207,7 +206,7 @@ export class NHentaiRedirected extends Source {
     // If the search query is a six digit direct link to a manga, create a request to just that URL and alert the handler via metadata
     if (query.title?.match(/\d{5,6}/)) {
       return createRequestObject({
-        url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${query.title}`,
+        url: `${NHENTAI_DOMAIN}/g/${query.title}`,
         metadata: { sixDigit: true },
         timeout: 4000,
         method: "GET"
@@ -235,9 +234,10 @@ export class NHentaiRedirected extends Source {
     }
 
     param = param.trim()
+    param = encodeURI(param)
 
     return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/search/?q=${param}&page=1`,
+      url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=1`,
       metadata: { sixDigit: false },
       timeout: 4000,
       method: "GET"
@@ -304,10 +304,46 @@ export class NHentaiRedirected extends Source {
     }) 
   }
 
+  getTagsRequest(): Request | null {
+    return createRequestObject({
+      url: `${NHENTAI_DOMAIN}/tags/popular`,
+      timeout: 4000,
+      method: "GET"
+    })
+  }
+
+  getTags(data: any): TagSection[] | null {
+    let tagCategoryId = 'Popular'     // There are no tag categories, just 'tags', as we're parsing the first page of popular tags, just label it as popular
+    let tagLabel = 'Popular'
+    let tagSection : TagSection = createTagSection({
+      id: tagCategoryId,
+      label: tagLabel,
+      tags: []
+    })
+
+    let $ = this.cheerio.load(data)
+    let container = $("#tag-container")
+
+    for(let item of $('a', container).toArray()) {
+      let currNode = $(item)
+
+      // Grab the tag and add it to the list
+      let tagName = currNode.text()     // Consider pulling the legitimate tag IDs instead of the names?
+
+      // Tags come in the form 'Sole female (99,999) or some form of numbers in parenths. Remove that from the string
+      tagName = tagName.replace(/\(\d*,*\d*\)/, "").trim()
+
+      tagSection.tags.push(createTag({
+        id: tagName,
+        label: tagName
+      }))
+    }
+    return [tagSection]
+  }
 
   getHomePageSectionRequest(): HomeSectionRequest[] | null {
 
-    let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/`, method: 'GET', })
+    let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/site/`, method: 'GET', })
     let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })
     return [createHomeSectionRequest({ request: request, sections: [homeSection] })]
 
@@ -344,4 +380,12 @@ export class NHentaiRedirected extends Source {
     section[0].items = updatedHentai
     return section
   }
+
+  getViewMoreRequest(key: string, page: number): Request | null {
+    return createRequestObject({
+      url: `${NHENTAI_DOMAIN}/site/?page=${page}`,
+      method: 'GET'
+    })
+  }
+
 }

@@ -48,6 +48,27 @@ describe('N-Hentai Redirector Tests', function () {
         expect(data.pages, "No pages present").to.be.not.empty;
     });
 
+    it("Searching for Manga With Valid Tags", async () => {
+        let testSearch = createSearchRequest({
+            title: 'female',
+            includeContent: ['bikini'],
+            excludeContent: ['sole female']
+        });
+
+        let search = await wrapper.search(source, testSearch, 1);
+        let result = search[0];
+
+        expect(result, "No response from server").to.exist;
+
+        expect(result.id, "No ID found for search query").to.be.not.empty;
+        expect(result.image, "No image found for search").to.be.not.empty;
+        expect(result.title, "No title").to.be.not.null;
+        expect(result.subtitleText, "No subtitle text").to.be.not.null;
+        expect(result.primaryText, "No primary text").to.be.not.null;
+        expect(result.secondaryText, "No secondary text").to.be.not.null;
+
+    });
+
     it("Searching for Manga With A Valid six-digit query", async () => {
         let testSearch = createSearchRequest({
             title: '312483',
@@ -86,6 +107,39 @@ describe('N-Hentai Redirector Tests', function () {
         expect(result).to.not.exist;    // There should be no entries with this tag!
     });
 
+    it("Searching for Manga With Invalid Tags", async () => {
+        let testSearch = createSearchRequest({
+            title: 'Ratiaion House',
+            excludeDemographic: ['Seinen']
+        });
+
+        let search = await wrapper.search(source, testSearch, 1);
+        let result = search[0];
+        expect(result).to.not.exist;    // There should be no entries with this tag!
+    });
+
+
+    it("Searching for Manga by artist", async() => {
+        let testSearch = createSearchRequest({
+            artist: 'shiraichigo'
+        })
+
+        let search = await wrapper.search(source, testSearch, 1)
+        let result = search[0]
+        expect(result).to.exist
+    })
+
+    it("Searching for Manga by invalid artist", async() => {
+        let testSearch = createSearchRequest({
+            artist: 'Daniel Kovalevich'
+        })
+
+        let search = await wrapper.search(source, testSearch, 1)
+        let result = search[0]
+
+        expect(result).to.not.exist
+    })
+
     it("Searching with Hentai settings disabled", async() => {
         let testSearch = createSearchRequest({
             title: "Women",
@@ -109,5 +163,16 @@ describe('N-Hentai Redirector Tests', function () {
         expect(newHentai.items, "No items available for popular titles").to.not.be.empty;
     });
 
+    it("Retrieve Tags", async() => {
+        let data = await wrapper.getTags(source)
+        expect(data, "No response from server").to.exist
+        expect(data[0].tags).to.not.be.empty
+    })
+
     
+    it("Show More Homepage data", async() => {
+        let data = await wrapper.getViewMoreItems(source, "none", 3)
+        expect(data, "No response from server").to.exist;
+        expect(data, "No response from server").to.be.not.empty;
+    })
 });

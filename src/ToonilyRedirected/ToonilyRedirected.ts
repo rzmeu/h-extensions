@@ -1,7 +1,7 @@
 
 import { Source, Manga, MangaStatus, Tag, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, MangaUpdates, LanguageCode, Request, SourceTag, TagType, PagedResults } from "paperback-extensions-common"
 
-const TOONILY_DOMAIN = 'http://paperback-redirector.herokuapp.com/ty'
+const TOONILY_DOMAIN = 'https://paperback-redirector.herokuapp.com/ty'
 
 export class ToonilyRedirected extends Source {
   constructor(cheerio: CheerioAPI) {
@@ -56,7 +56,7 @@ export class ToonilyRedirected extends Source {
     // Get all of the tags
     let tags: Tag[] = []
     for (let obj of $('a', $('.genres-content')).toArray()) {
-      let tagId = $(obj).attr('href')?.replace('https://toonily.com/webtoon-genre/', '').replace('/', '')
+      let tagId = $(obj).attr('href')?.replace(`${TOONILY_DOMAIN}/site/webtoon-genre`, '').replace('/', '')
       let tagName = $(obj).text()
 
       if (!tagId || !tagName) {
@@ -102,7 +102,7 @@ export class ToonilyRedirected extends Source {
     let chapters: Chapter[] = []
 
     for (let obj of $('.wp-manga-chapter  ').toArray()) {
-      let id = $('a', $(obj)).attr('href')?.replace(`${TOONILY_DOMAIN}/webtoon/${metadata.id}/`, '').replace('/', '')!
+      let id = $('a', $(obj)).attr('href')?.replace(`${TOONILY_DOMAIN}/site/webtoon/${metadata.id}/`, '').replace('/', '')!
       let chapNum = Number(/(\d+)/g.exec($('a', $(obj)).text())![1])
       let date = new Date($('i', $(obj)).text())
 
@@ -166,7 +166,7 @@ export class ToonilyRedirected extends Source {
     query.title = query.title?.replace(" ", "+")
     return createRequestObject({
       //https://toonily.com/?s=Hero&post_type=wp-manga
-      url: `${TOONILY_DOMAIN}/?s=${query.title}&post_type=wp-manga`,
+      url: `${TOONILY_DOMAIN}/site/?s=${query.title}&post_type=wp-manga`,
       timeout: 4000,
       method: "GET"
     })
@@ -178,7 +178,7 @@ export class ToonilyRedirected extends Source {
     let mangaTiles: MangaTile[] = []
 
     for (let obj of $('.row', $('.c-tabs-item')).toArray()) {
-      let id = $('a', $(obj)).attr('href')?.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '')!
+      let id = $('a', $(obj)).attr('href')?.replace(`${TOONILY_DOMAIN}/site/webtoon/`, '').replace('/', '')!
       let title = $('a', $(obj)).attr('title')!
       let image = $('img', $(obj)).attr('data-src')!
 
@@ -201,7 +201,7 @@ export class ToonilyRedirected extends Source {
 
     let request = createRequestObject({ url: `${TOONILY_DOMAIN}`, method: 'GET' })
     let latestUpdatesSection = createHomeSection({ id: 'latest_updates', title: 'LATEST UPDATES', view_more: createRequestObject({
-      url: `${TOONILY_DOMAIN}/site`,
+      url: `${TOONILY_DOMAIN}/site/`,
       method: 'GET',
       metadata: {
         page: 1

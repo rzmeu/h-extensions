@@ -8,7 +8,7 @@ export class ToonilyRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.1.21' }
+  get version(): string { return '1.1.3' }
   get name(): string { return 'Toonily (Geo-Unlocked)' }
   get description(): string { return 'Toonily source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }

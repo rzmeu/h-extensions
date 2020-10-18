@@ -2681,7 +2681,7 @@ class ToonilyRedirected extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.21'; }
+    get version() { return '1.1.3'; }
     get name() { return 'Toonily (Geo-Unlocked)'; }
     get description() { return 'Toonily source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }

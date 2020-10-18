@@ -8,8 +8,8 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.8.5' }
-  get name(): string { return 'nHentai (Country-Proof)' }
+  get version(): string { return '0.9.0' }
+  get name(): string { return 'nHentai (Geo-Unlocked)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
   get authorWebsite(): string { return 'http:github.com/conradweiser'}
@@ -344,7 +344,14 @@ export class NHentaiRedirected extends Source {
   getHomePageSectionRequest(): HomeSectionRequest[] | null {
 
     let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/site/`, method: 'GET', })
-    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' })
+    let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
+      url: `${NHENTAI_DOMAIN}/?page=1`,
+      method: 'GET',
+      metadata: {
+        page: 2
+      }
+    } )
+  })
     return [createHomeSectionRequest({ request: request, sections: [homeSection] })]
 
   }
@@ -381,11 +388,52 @@ export class NHentaiRedirected extends Source {
     return section
   }
 
-  getViewMoreRequest(key: string, page: number): Request | null {
-    return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/site/?page=${page}`,
-      method: 'GET'
+  getViewMoreItems(data: string, key: string, metadata: any): PagedResults {
+
+    // Debug out to console that this event occured
+    console.log(`getViewMoreItems request made to ${NHENTAI_DOMAIN}/site/?page=${metadata.page}`)
+
+    let $ = this.cheerio.load(data)
+    metadata.page = metadata.page + 1
+
+    let discoveredObjects: MangaTile[] = []
+
+    let containerNode = $('.index-container')
+    for (let item of $('.gallery', containerNode).toArray()) {
+      let currNode = $(item)
+      let image = $('img', currNode).attr('data-src')!
+
+      // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
+      if (image == undefined) {
+        image = 'http:' + $('img', currNode).attr('src')!
+      }
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      let title = $('.caption', currNode).text()
+      title = title.replace(/(\[.+?\])/g, "").trim()
+
+      let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
+
+      console.log(`[LOG] Discovered ${idHref[1]} in getViewMoreItems`)
+
+      discoveredObjects.push(createMangaTile({
+        id: idHref[1],
+        title: createIconText({ text: title }),
+        image: image
+      }))
+    }
+
+
+    return createPagedResults({
+      results: discoveredObjects,
+        nextPage: createRequestObject({
+        url: `${NHENTAI_DOMAIN}/site/?page=${metadata.page}`,
+        method: 'get',
+        metadata: metadata
+      })
     })
+
   }
+
 
 }

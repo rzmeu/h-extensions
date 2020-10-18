@@ -2677,27 +2677,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.NHentaiRedirected = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const NHENTAI_DOMAIN = 'http://paperback-redirector.herokuapp.com/nh';
-const DEFAULT_DOMAIN = 'https://nhentai.net';
 class NHentaiRedirected extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.8.6'; }
+    get version() { return '0.9.0'; }
     get name() { return 'nHentai (Geo-Unlocked)'; }
     get description() { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source'; }
     get author() { return 'Conrad Weiser'; }
     get authorWebsite() { return 'http:github.com/conradweiser'; }
     get icon() { return "logo.png"; }
     get hentaiSource() { return true; }
-    getMangaShareUrl(mangaId) { return `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${mangaId}`; }
+    getMangaShareUrl(mangaId) { return `${NHENTAI_DOMAIN}/g/${mangaId}`; }
     get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }]; }
-    get websiteBaseURL() { return `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}`; }
+    get websiteBaseURL() { return NHENTAI_DOMAIN; }
     getMangaDetailsRequest(ids) {
         let requests = [];
         for (let id of ids) {
             let metadata = { 'id': id };
             requests.push(createRequestObject({
-                url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${id}/`,
+                url: `${NHENTAI_DOMAIN}/g/${id}/`,
                 metadata: metadata,
                 method: 'GET'
             }));
@@ -2771,7 +2770,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
     getChaptersRequest(mangaId) {
         let metadata = { 'id': mangaId };
         return createRequestObject({
-            url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${mangaId}/`,
+            url: `${NHENTAI_DOMAIN}/g/${mangaId}/`,
             method: "GET",
             metadata: metadata
         });
@@ -2817,7 +2816,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
     getChapterDetailsRequest(mangaId, chapId) {
         let metadata = { 'mangaId': mangaId, 'chapterId': chapId };
         return createRequestObject({
-            url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${mangaId}/`,
+            url: `${NHENTAI_DOMAIN}/g/${mangaId}/`,
             metadata: metadata,
             method: 'GET',
         });
@@ -2856,7 +2855,7 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
         // If the search query is a six digit direct link to a manga, create a request to just that URL and alert the handler via metadata
         if ((_a = query.title) === null || _a === void 0 ? void 0 : _a.match(/\d{5,6}/)) {
             return createRequestObject({
-                url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/g/${query.title}`,
+                url: `${NHENTAI_DOMAIN}/g/${query.title}`,
                 metadata: { sixDigit: true },
                 timeout: 4000,
                 method: "GET"
@@ -2881,8 +2880,9 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
             param += ("Artist:" + query.artist.replace(" ", "+") + "+");
         }
         param = param.trim();
+        param = encodeURI(param);
         return createRequestObject({
-            url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/search/?q=${param}&page=1`,
+            url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=1`,
             metadata: { sixDigit: false },
             timeout: 4000,
             method: "GET"
@@ -2933,9 +2933,46 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
             results: mangaTiles
         });
     }
+    getTagsRequest() {
+        return createRequestObject({
+            url: `${NHENTAI_DOMAIN}/tags/popular`,
+            timeout: 4000,
+            method: "GET"
+        });
+    }
+    getTags(data) {
+        let tagCategoryId = 'Popular'; // There are no tag categories, just 'tags', as we're parsing the first page of popular tags, just label it as popular
+        let tagLabel = 'Popular';
+        let tagSection = createTagSection({
+            id: tagCategoryId,
+            label: tagLabel,
+            tags: []
+        });
+        let $ = this.cheerio.load(data);
+        let container = $("#tag-container");
+        for (let item of $('a', container).toArray()) {
+            let currNode = $(item);
+            // Grab the tag and add it to the list
+            let tagName = currNode.text(); // Consider pulling the legitimate tag IDs instead of the names?
+            // Tags come in the form 'Sole female (99,999) or some form of numbers in parenths. Remove that from the string
+            tagName = tagName.replace(/\(\d*,*\d*\)/, "").trim();
+            tagSection.tags.push(createTag({
+                id: tagName,
+                label: tagName
+            }));
+        }
+        return [tagSection];
+    }
     getHomePageSectionRequest() {
-        let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/${DEFAULT_DOMAIN}/`, method: 'GET', });
-        let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI' });
+        let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/site/`, method: 'GET', });
+        let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
+                url: `${NHENTAI_DOMAIN}/?page=1`,
+                method: 'GET',
+                metadata: {
+                    page: 2
+                }
+            })
+        });
         return [createHomeSectionRequest({ request: request, sections: [homeSection] })];
     }
     getHomePageSections(data, section) {
@@ -2962,6 +2999,41 @@ class NHentaiRedirected extends paperback_extensions_common_1.Source {
         }
         section[0].items = updatedHentai;
         return section;
+    }
+    getViewMoreItems(data, key, metadata) {
+        var _a;
+        // Debug out to console that this event occured
+        console.log(`getViewMoreItems request made to ${NHENTAI_DOMAIN}/site/?page=${metadata.page}`);
+        let $ = this.cheerio.load(data);
+        metadata.page = metadata.page + 1;
+        let discoveredObjects = [];
+        let containerNode = $('.index-container');
+        for (let item of $('.gallery', containerNode).toArray()) {
+            let currNode = $(item);
+            let image = $('img', currNode).attr('data-src');
+            // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
+            if (image == undefined) {
+                image = 'http:' + $('img', currNode).attr('src');
+            }
+            // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+            let title = $('.caption', currNode).text();
+            title = title.replace(/(\[.+?\])/g, "").trim();
+            let idHref = (_a = $('a', currNode).attr('href')) === null || _a === void 0 ? void 0 : _a.match(/\/(\d*)\//);
+            console.log(`[LOG] Discovered ${idHref[1]} in getViewMoreItems`);
+            discoveredObjects.push(createMangaTile({
+                id: idHref[1],
+                title: createIconText({ text: title }),
+                image: image
+            }));
+        }
+        return createPagedResults({
+            results: discoveredObjects,
+            nextPage: createRequestObject({
+                url: `${NHENTAI_DOMAIN}/site/?page=${metadata.page}`,
+                method: 'get',
+                metadata: metadata
+            })
+        });
     }
 }
 exports.NHentaiRedirected = NHentaiRedirected;

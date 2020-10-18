@@ -8,7 +8,7 @@ export class NHentaiRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.9.0' }
+  get version(): string { return '0.9.1' }
   get name(): string { return 'nHentai (Geo-Unlocked)' }
   get description(): string { return 'nHentai source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -345,7 +345,7 @@ export class NHentaiRedirected extends Source {
 
     let request = createRequestObject({ url: `${NHENTAI_DOMAIN}/site/`, method: 'GET', })
     let homeSection = createHomeSection({ id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
-      url: `${NHENTAI_DOMAIN}/?page=1`,
+      url: `${NHENTAI_DOMAIN}/site/?page=1`,
       method: 'GET',
       metadata: {
         page: 2

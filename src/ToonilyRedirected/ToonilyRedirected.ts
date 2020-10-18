@@ -8,7 +8,7 @@ export class ToonilyRedirected extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.1.3' }
+  get version(): string { return '1.1.31' }
   get name(): string { return 'Toonily (Geo-Unlocked)' }
   get description(): string { return 'Toonily source which is guaranteed to work in countries the website is normally blocked. May be a tad slower than the other source' }
   get author(): string { return 'Conrad Weiser' }
@@ -199,7 +199,7 @@ export class ToonilyRedirected extends Source {
 
   getHomePageSectionRequest(): HomeSectionRequest[] | null {
 
-    let request = createRequestObject({ url: `${TOONILY_DOMAIN}`, method: 'GET' })
+    let request = createRequestObject({ url: `${TOONILY_DOMAIN}/site/`, method: 'GET' })
     let latestUpdatesSection = createHomeSection({ id: 'latest_updates', title: 'LATEST UPDATES', view_more: createRequestObject({
       url: `${TOONILY_DOMAIN}/site/`,
       method: 'GET',
@@ -274,7 +274,7 @@ export class ToonilyRedirected extends Source {
 
     for (let row of $('.page-listing-item').toArray()) {
       for (let obj of $('.col-6', $(row)).toArray()) {
-        let id = $('a', $('.item-thumb', $(obj))).attr('href')?.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '')
+        let id = $('a', $('.item-thumb', $(obj))).attr('href')?.replace(`${TOONILY_DOMAIN}/site/webtoon/`, '').replace('/', '')
         let title = $('a', $('.item-thumb', $(obj))).attr('title')?.trim()
         let image = $('img', $(obj)).attr('data-src')
         let rating = $('.total_votes', $(obj)).text().trim()

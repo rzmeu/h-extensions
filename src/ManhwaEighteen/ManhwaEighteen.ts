@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.52' }
+  get version(): string { return '0.7.53' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -15,7 +15,7 @@ export class ManhwaEighteen extends Source {
   get icon(): string { return "logo.png" }
   get hentaiSource(): boolean { return true }
   getMangaShareUrl(mangaId: string): string | null { return `${ME_DOMAIN}/${mangaId}.html` }
-  get sourceTags(): SourceTag[] { return [{ text: "18+", type: TagType.YELLOW }] }
+  get sourceTags(): SourceTag[] { return [{ text: "18+", type: TagType.YELLOW }, {text: "Buggy", type: TagType.RED}] }
   get websiteBaseURL(): string { return ME_DOMAIN }
 
   getMangaDetailsRequest(ids: string[]): Request[] {

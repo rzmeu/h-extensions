@@ -2681,7 +2681,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '0.7.53'; }
+    get version() { return '0.7.54'; }
     get name() { return 'Manhwa18 (18+)'; }
     get description() { return 'Extension that pulls manga from Manhwa18'; }
     get author() { return 'Conrad Weiser'; }
@@ -2858,10 +2858,12 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
             // If the page URL is missing 
             if (pageUrl.includes(`manhwa18`) || pageUrl.includes('i.ibb')) {
                 pages.push(pageUrl);
+                console.log(pageUrl);
             }
             else {
                 // Append it manually
                 pages.push(`${ME_DOMAIN}/${pageUrl}`);
+                console.log(`${ME_DOMAIN}/${pageUrl}`);
             }
         }
         metadata.chapterId = metadata.chapterId.replace(".html", "");

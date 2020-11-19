@@ -7,7 +7,7 @@ export class ManhwaEighteen extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '0.7.53' }
+  get version(): string { return '0.7.54' }
   get name(): string { return 'Manhwa18 (18+)' }
   get description(): string { return 'Extension that pulls manga from Manhwa18' }
   get author(): string { return 'Conrad Weiser' }
@@ -210,11 +210,14 @@ export class ManhwaEighteen extends Source {
       // If the page URL is missing 
       if(pageUrl.includes(`manhwa18`) || pageUrl.includes('i.ibb')) {
         pages.push(pageUrl)
+        console.log(pageUrl)
       }
 
       else {
         // Append it manually
         pages.push(`${ME_DOMAIN}/${pageUrl}`)
+
+        console.log(`${ME_DOMAIN}/${pageUrl}`)
       }
     }
 

@@ -2681,7 +2681,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.21'; }
+    get version() { return '1.1.22'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
@@ -2929,14 +2929,14 @@ class Toonily extends paperback_extensions_common_1.Source {
         var _a;
         let $ = this.cheerio.load(data);
         metadata.page = metadata.page++;
-        let returnObject = {
+        let returnObject = createMangaUpdates({
             'ids': [],
             nextPage: createRequestObject({
                 url: `${TOONILY_DOMAIN}/page/${metadata.page}`,
                 method: 'GET',
                 metadata: metadata
             })
-        };
+        });
         for (let row of $('.page-listing-item').toArray()) {
             for (let obj of $('.col-6', $(row)).toArray()) {
                 let id = (_a = $('a', $('.item-thumb', $(obj))).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');

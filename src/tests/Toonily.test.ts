@@ -10,12 +10,14 @@ describe('Toonily Tests', function () {
     var chaiAsPromised = require('chai-as-promised');
     chai.use(chaiAsPromised);
 
+    var axios = require('axios')
+
     /**
      * The Manga ID which this unit test uses to base it's details off of.
      * Try to choose a manga which is updated frequently, so that the historical checking test can 
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "ones-in-laws-virgins"; 
+    var mangaId = "liliths-cord-001"; 
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, [mangaId]);
@@ -31,14 +33,19 @@ describe('Toonily Tests', function () {
     });
 
     it("Get Chapters", async () => {
-        let data = await wrapper.getChapters(source, mangaId);
+        let data = await wrapper.getChapters(source, '2517');
         expect(data, "No chapters present for: [" + mangaId + "]").to.not.be.empty;
     });
+    
+//     it("Fuked", async() => {
+//         let data = await axios.get('https://toonily.com/webtoon/liliths-cord-001/chapter-85/')
+//         console.log(data)
+// })
 
     it("Get Chapter Details", async () => {
 
-        let chapters = await wrapper.getChapters(source, mangaId);
-        let data = await wrapper.getChapterDetails(source, mangaId, chapters[0].id);
+        let chapters = await wrapper.getChapters(source, '2517');
+        let data = await wrapper.getChapterDetails(source, '2517', chapters[0].id);
 
         expect(data, "No server response").to.exist;
         expect(data, "Empty server response").to.not.be.empty;

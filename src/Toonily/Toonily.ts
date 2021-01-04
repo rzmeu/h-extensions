@@ -8,15 +8,18 @@ export class Toonily extends Source {
     super(cheerio)
   }
 
-  get version(): string { return '1.1.22' }
+  get version(): string { return '1.1.23' }
   get name(): string { return 'Toonily' }
   get description(): string { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.' }
   get author(): string { return 'Conrad Weiser' }
   get authorWebsite(): string { return 'http://github.com/conradweiser' }
   get icon(): string { return "logo.png" }
   get hentaiSource(): boolean { return false }
-  get sourceTags(): SourceTag[] { return [{ text: "18+", type: TagType.YELLOW }] }
+  get sourceTags(): SourceTag[] { return [{ text: "18+", type: TagType.YELLOW }, {text: "Buggy", type: TagType.RED}] }
   get websiteBaseURL(): string { return TOONILY_DOMAIN }
+
+  // Set the ratelimit to 2 to test an extreme case
+  get rateLimit(): Number { return 1 }
 
 
   getMangaDetailsRequest(ids: string[]): Request[] {
@@ -68,7 +71,7 @@ export class Toonily extends Source {
 
 
     return [createManga({
-      id: metadata.id,
+      id: $('.wp-manga-action-button').attr('data-post')!,
       titles: [title],
       image: image!,
       rating: Number(rating),
@@ -85,15 +88,13 @@ export class Toonily extends Source {
 
     let metadata = { 'id': mangaId }
     return createRequestObject({
-      url: `${TOONILY_DOMAIN}/webtoon/${metadata.id}`,
-      cookies: [{
-        name: 'wpmanga-adault',
-        value: '1',
-        domain: 'toonily.com',
-        path: '/'
-      }],
+      url: `${TOONILY_DOMAIN}/wp-admin/admin-ajax.php`,
+      headers: {
+        action: 'manga_get_chapters',
+        manga: mangaId
+      },
       metadata: metadata,
-      method: 'GET'
+      method: 'POST'
     })
   }
 
@@ -109,7 +110,7 @@ export class Toonily extends Source {
       chapters.push(createChapter({
         id: id,
         mangaId: metadata.id,
-        langCode: LanguageCode.ENGLISH,
+      langCode: LanguageCode.ENGLISH,
         chapNum: chapNum,
         time: date
       }))
@@ -121,6 +122,17 @@ export class Toonily extends Source {
   getChapterDetailsRequest(mangaId: string, chapId: string): Request {
 
     let metadata = { 'mangaId': mangaId, 'chapterId': chapId }
+    console.log(metadata, createRequestObject({
+      url: `${TOONILY_DOMAIN}/webtoon/${mangaId}/${chapId}/`,
+      metadata: metadata,
+      cookies: [{
+        name: 'wpmanga-adault',
+        value: '1',
+      domain: 'toonily.com',
+        path: '/'
+      }],
+      method: 'GET',
+    }));
     return createRequestObject({
       url: `${TOONILY_DOMAIN}/webtoon/${mangaId}/${chapId}/`,
       metadata: metadata,

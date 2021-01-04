@@ -2681,15 +2681,17 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.22'; }
+    get version() { return '1.1.23'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
     get authorWebsite() { return 'http://github.com/conradweiser'; }
     get icon() { return "logo.png"; }
     get hentaiSource() { return false; }
-    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }]; }
+    get sourceTags() { return [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }, { text: "Buggy", type: paperback_extensions_common_1.TagType.RED }]; }
     get websiteBaseURL() { return TOONILY_DOMAIN; }
+    // Set the ratelimit to 2 to test an extreme case
+    get rateLimit() { return 1; }
     getMangaDetailsRequest(ids) {
         let requests = [];
         for (let id of ids) {
@@ -2731,7 +2733,7 @@ class Toonily extends paperback_extensions_common_1.Source {
             tags.push(createTag({ id: tagId, label: tagName }));
         }
         return [createManga({
-                id: metadata.id,
+                id: $('.wp-manga-action-button').attr('data-post'),
                 titles: [title],
                 image: image,
                 rating: Number(rating),
@@ -2746,15 +2748,13 @@ class Toonily extends paperback_extensions_common_1.Source {
     getChaptersRequest(mangaId) {
         let metadata = { 'id': mangaId };
         return createRequestObject({
-            url: `${TOONILY_DOMAIN}/webtoon/${metadata.id}`,
-            cookies: [{
-                    name: 'wpmanga-adault',
-                    value: '1',
-                    domain: 'toonily.com',
-                    path: '/'
-                }],
+            url: `${TOONILY_DOMAIN}/wp-admin/admin-ajax.php`,
+            headers: {
+                action: 'manga_get_chapters',
+                manga: mangaId
+            },
             metadata: metadata,
-            method: 'GET'
+            method: 'POST'
         });
     }
     getChapters(data, metadata) {
@@ -2777,6 +2777,17 @@ class Toonily extends paperback_extensions_common_1.Source {
     }
     getChapterDetailsRequest(mangaId, chapId) {
         let metadata = { 'mangaId': mangaId, 'chapterId': chapId };
+        console.log(metadata, createRequestObject({
+            url: `${TOONILY_DOMAIN}/webtoon/${mangaId}/${chapId}/`,
+            metadata: metadata,
+            cookies: [{
+                    name: 'wpmanga-adault',
+                    value: '1',
+                    domain: 'toonily.com',
+                    path: '/'
+                }],
+            method: 'GET',
+        }));
         return createRequestObject({
             url: `${TOONILY_DOMAIN}/webtoon/${mangaId}/${chapId}/`,
             metadata: metadata,

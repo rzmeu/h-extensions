@@ -2681,7 +2681,7 @@ class Toonily extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
     }
-    get version() { return '1.1.23'; }
+    get version() { return '1.1.24'; }
     get name() { return 'Toonily'; }
     get description() { return 'Source full of Korean Manhwa content. Contains both 18+ and non-18+ material.'; }
     get author() { return 'Conrad Weiser'; }
@@ -2697,7 +2697,7 @@ class Toonily extends paperback_extensions_common_1.Source {
         for (let id of ids) {
             let metadata = { 'id': id };
             requests.push(createRequestObject({
-                url: `${TOONILY_DOMAIN}/webtoon/${metadata.id}`,
+                url: `${TOONILY_DOMAIN}/read/${metadata.id}`,
                 cookies: [{
                         name: 'wpmanga-adault',
                         value: '1',
@@ -2711,83 +2711,60 @@ class Toonily extends paperback_extensions_common_1.Source {
         return requests;
     }
     getMangaDetails(data, metadata) {
-        var _a;
-        let manga = [];
         let $ = this.cheerio.load(data);
-        let title = $('h1', $('.post-title')).text().replace('18+', '').trim();
-        let hentai = $('.adult').toArray().length > 0 ? true : false;
-        let image = $('img', $('.summary_image')).attr('data-src');
+        let title = $('div.post-title h1').first().text().replace("\\n", '').trim();
+        let author = $('div.author-content').first().text().replace("\\n", '').trim();
+        let artist = $('div.artist-content').first().text().replace("\\n", '').trim();
+        let summaryContext = $('div.description-summary div.summary__content');
+        let summary = $('p', summaryContext).text();
+        let image = $('div.summary_image img').first().attr('data-src');
+        let status = $('div.summary-content').last().text().replace("\n", '').replace("\t", '');
         let rating = $('.total_votes').text().replace('Your Rating', '');
-        let status = $('.summary-content').text().toLowerCase().includes('ongoing') ? paperback_extensions_common_1.MangaStatus.ONGOING : paperback_extensions_common_1.MangaStatus.COMPLETED;
-        let artist = $('a', $('.artist-content')).text();
-        let author = $('a', $('.author-content')).text();
-        let desc = $('p', $('.summary__content ')).text();
-        // Get all of the tags
-        let tags = [];
-        for (let obj of $('a', $('.genres-content')).toArray()) {
-            let tagId = (_a = $(obj).attr('href')) === null || _a === void 0 ? void 0 : _a.replace('https://toonily.com/webtoon-genre/', '').replace('/', '');
-            let tagName = $(obj).text();
-            if (!tagId || !tagName) {
-                continue;
-            }
-            tags.push(createTag({ id: tagId, label: tagName }));
+        let genres = [];
+        for (let obj of $('div.genres-content a').toArray()) {
+            let genre = $(obj).text();
+            genres.push(createTag({ id: genre, label: genre }));
         }
         return [createManga({
-                id: $('.wp-manga-action-button').attr('data-post'),
+                id: metadata.id,
                 titles: [title],
-                image: image,
-                rating: Number(rating),
-                status: status,
-                hentai: hentai,
-                artist: artist,
+                image: image !== null && image !== void 0 ? image : '',
                 author: author,
-                desc: desc,
-                tags: [createTagSection({ label: 'genres', id: 'genres', tags: tags })]
+                artist: artist,
+                desc: summary,
+                tags: [createTagSection({ id: 'genres', label: 'genres', tags: genres })],
+                rating: Number(rating),
+                status: status == "OnGoing" ? paperback_extensions_common_1.MangaStatus.ONGOING : paperback_extensions_common_1.MangaStatus.COMPLETED
             })];
     }
     getChaptersRequest(mangaId) {
         let metadata = { 'id': mangaId };
         return createRequestObject({
-            url: `${TOONILY_DOMAIN}/wp-admin/admin-ajax.php`,
-            headers: {
-                action: 'manga_get_chapters',
-                manga: mangaId
-            },
+            url: `${TOONILY_DOMAIN}/webtoon/${mangaId}`,
             metadata: metadata,
-            method: 'POST'
+            method: 'GET'
         });
     }
     getChapters(data, metadata) {
         var _a;
         let $ = this.cheerio.load(data);
         let chapters = [];
-        for (let obj of $('.wp-manga-chapter  ').toArray()) {
-            let id = (_a = $('a', $(obj)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/${metadata.id}/`, '').replace('/', '');
-            let chapNum = Number(/(\d+)/g.exec($('a', $(obj)).text())[1]);
-            let date = new Date($('i', $(obj)).text());
+        for (let obj of $('li.wp-manga-chapter  ', $('ul.version-chap')).toArray()) {
+            let id = (_a = $('a', obj).attr('href')) === null || _a === void 0 ? void 0 : _a.match(/(chapter-\d+)/);
+            if (id === null || id === undefined || id[0] === undefined) {
+                continue;
+            }
             chapters.push(createChapter({
-                id: id,
+                id: id[0],
                 mangaId: metadata.id,
+                chapNum: Number($(obj).text().replace(/\D/g, '')),
                 langCode: paperback_extensions_common_1.LanguageCode.ENGLISH,
-                chapNum: chapNum,
-                time: date
             }));
         }
         return chapters;
     }
     getChapterDetailsRequest(mangaId, chapId) {
         let metadata = { 'mangaId': mangaId, 'chapterId': chapId };
-        console.log(metadata, createRequestObject({
-            url: `${TOONILY_DOMAIN}/webtoon/${mangaId}/${chapId}/`,
-            metadata: metadata,
-            cookies: [{
-                    name: 'wpmanga-adault',
-                    value: '1',
-                    domain: 'toonily.com',
-                    path: '/'
-                }],
-            method: 'GET',
-        }));
         return createRequestObject({
             url: `${TOONILY_DOMAIN}/webtoon/${mangaId}/${chapId}/`,
             metadata: metadata,
@@ -2804,15 +2781,14 @@ class Toonily extends paperback_extensions_common_1.Source {
         var _a, _b;
         let $ = this.cheerio.load(data);
         let pages = [];
-        for (let obj of $('.page-break', $('.reading-content')).toArray()) {
-            let pageContent = (_a = $('img', $(obj)).attr('data-src')) === null || _a === void 0 ? void 0 : _a.trim();
-            if (!pageContent) {
-                // Try the alternative page getter
-                pages.push((_b = $('img', $(obj)).attr('src')) === null || _b === void 0 ? void 0 : _b.trim());
+        for (let obj of $('div.page-break').toArray()) {
+            let pageUrl = (_b = (_a = $('img', $(obj)).attr('data-src')) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : '';
+            pageUrl = pageUrl.substr(pageUrl.indexOf('https'));
+            if (pageUrl == '') {
+                console.log("Failed to parse Toonily chapter detail");
+                continue;
             }
-            else {
-                pages.push(pageContent);
-            }
+            pages.push(pageUrl);
         }
         return createChapterDetails({
             id: metadata.chapterId,
@@ -2826,30 +2802,37 @@ class Toonily extends paperback_extensions_common_1.Source {
         query.title = (_a = query.title) === null || _a === void 0 ? void 0 : _a.replace(" ", "+");
         return createRequestObject({
             //https://toonily.com/?s=Hero&post_type=wp-manga
-            url: `${TOONILY_DOMAIN}/?s=${query.title}&post_type=wp-manga`,
-            timeout: 4000,
+            url: `${TOONILY_DOMAIN}/page/${0}/?s=${query.title}&post_type=wp-manga`,
             method: "GET"
         });
     }
     search(data, metadata) {
         var _a;
         let $ = this.cheerio.load(data);
-        let mangaTiles = [];
-        for (let obj of $('.row', $('.c-tabs-item')).toArray()) {
-            let id = (_a = $('a', $(obj)).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');
-            let title = $('a', $(obj)).attr('title');
+        let results = [];
+        for (let obj of $('div.c-tabs-item__content').toArray()) {
+            let idContext = $('a', $('h3.h4', $(obj))).attr('href');
+            if (!idContext) {
+                continue;
+            }
+            let idParse = idContext.match(/\/read\/(.+)\//);
+            if (idParse === null || !idParse[0]) {
+                continue;
+            }
+            let id = idParse[1];
+            let title = createIconText({ text: (_a = $('.h4', $(obj)).text()) !== null && _a !== void 0 ? _a : "NO TITLE AVAILABLE" });
             let image = $('img', $(obj)).attr('data-src');
-            let rating = $('.total_votes', $(obj)).text().trim();
-            mangaTiles.push(createMangaTile({
+            if (!image) {
+                // Do some kind of complaining here
+                continue;
+            }
+            results.push(createMangaTile({
                 id: id,
-                title: createIconText({ text: title }),
-                image: image,
-                primaryText: createIconText({ text: rating, icon: 'star.fill' })
+                title: title,
+                image: image
             }));
         }
-        return createPagedResults({
-            results: mangaTiles
-        });
+        return createPagedResults({ results: results });
     }
     getHomePageSectionRequest() {
         let request = createRequestObject({ url: `${TOONILY_DOMAIN}`, method: 'GET' });
@@ -2927,64 +2910,6 @@ class Toonily extends paperback_extensions_common_1.Source {
         }
         section[0].items = latestUpdates;
         return section;
-    }
-    filterUpdatedMangaRequest(ids, time) {
-        let metadata = { 'ids': ids, referenceTime: time, page: 1 };
-        return createRequestObject({
-            url: `${TOONILY_DOMAIN}`,
-            method: 'GET',
-            metadata: metadata
-        });
-    }
-    filterUpdatedManga(data, metadata) {
-        var _a;
-        let $ = this.cheerio.load(data);
-        metadata.page = metadata.page++;
-        let returnObject = createMangaUpdates({
-            'ids': [],
-            nextPage: createRequestObject({
-                url: `${TOONILY_DOMAIN}/page/${metadata.page}`,
-                method: 'GET',
-                metadata: metadata
-            })
-        });
-        for (let row of $('.page-listing-item').toArray()) {
-            for (let obj of $('.col-6', $(row)).toArray()) {
-                let id = (_a = $('a', $('.item-thumb', $(obj))).attr('href')) === null || _a === void 0 ? void 0 : _a.replace(`${TOONILY_DOMAIN}/webtoon/`, '').replace('/', '');
-                // has this object been updated within the reference date?
-                let chapterItem = $('.chapter-item', $(obj)).toArray()[0]; // Always just use the first entry
-                let postOnText = $('.post-on', $(chapterItem)).text().replace("\n", "").trim();
-                // Toonily has a wack way of displaying dates, it can be one of three things. New, '1 day ago', or a proper date.
-                var date = new Date();
-                if (postOnText.includes('1 day ago')) {
-                    date.setDate(date.getDate() - 1);
-                }
-                else if (postOnText == "") {
-                    // This is a NEW object, we have to parse out the date specifically for this
-                    var dateString = $('img', $(chapterItem)).attr('alt');
-                    if (dateString === null || dateString === void 0 ? void 0 : dateString.includes("mins")) {
-                        dateString = dateString.replace(/\D/g, '');
-                        date.setMinutes(date.getMinutes() - Number(dateString));
-                    }
-                    else if (dateString === null || dateString === void 0 ? void 0 : dateString.includes("hours")) {
-                        dateString = dateString.replace(/\D/g, '');
-                        date.setHours(date.getHours() - Number(dateString));
-                    }
-                }
-                else {
-                    // This is a properly formatted date we can parse
-                    date = new Date(postOnText);
-                }
-                // If this is past our reference time, disable paging to new pages for updates
-                if (date > metadata.referenceTime) {
-                    returnObject.nextPage = undefined;
-                }
-                if (date < metadata.referenceTime) {
-                    returnObject.ids.push(id);
-                }
-            }
-        }
-        return returnObject;
     }
 }
 exports.Toonily = Toonily;

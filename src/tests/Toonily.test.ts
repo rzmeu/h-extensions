@@ -17,7 +17,7 @@ describe('Toonily Tests', function () {
      * Try to choose a manga which is updated frequently, so that the historical checking test can 
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "perfect-half-eng"; 
+    var mangaId = "liliths-cord-001"; 
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, [mangaId]);
@@ -33,7 +33,7 @@ describe('Toonily Tests', function () {
     });
 
     it("Get Chapters", async () => {
-        let data = await wrapper.getChapters(source, mangaId);
+        let data = await wrapper.getChapters(source, '2517');
         expect(data, "No chapters present for: [" + mangaId + "]").to.not.be.empty;
     });
     
@@ -44,8 +44,8 @@ describe('Toonily Tests', function () {
 
     it("Get Chapter Details", async () => {
 
-        let chapters = await wrapper.getChapters(source, mangaId);
-        let data = await wrapper.getChapterDetails(source, mangaId, chapters[0].id);
+        let chapters = await wrapper.getChapters(source, '2517');
+        let data = await wrapper.getChapterDetails(source, '2517', chapters[0].id);
 
         expect(data, "No server response").to.exist;
         expect(data, "Empty server response").to.not.be.empty;
@@ -57,7 +57,7 @@ describe('Toonily Tests', function () {
 
     it("Searching for Manga", async () => {
         let testSearch = createSearchRequest({
-            title: 'Girl',
+            title: 'Hero',
         });
 
         let search = await wrapper.search(source, testSearch, 1);

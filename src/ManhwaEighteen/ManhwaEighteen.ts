@@ -18,7 +18,7 @@ import {
 const ME_DOMAIN = "https://manhwa18.net";
 
 export const ManhwaEighteenInfo: SourceInfo = {
-  version: "2.0.3",
+  version: "2.0.4",
   name: "Manhwa18",
   description: `Extension which pulls content from Manhwa18.`,
   author: `VibrantClouds`,
@@ -322,6 +322,11 @@ export class ManhwaEighteen extends Source {
           let title = createIconText({text: $('h3', $(obj)).text()})
           let id = $("a", $(obj)).attr("href")?.replace('.html', '') ?? ""
 
+          // If the image came from a CDN, we need to remove the ME_DOMAIN prefix
+          if(img.split('https').length > 2) {
+            img = img.substring(ME_DOMAIN.length)
+          }
+
         if(img && title && id) {
             popular.push(createMangaTile({image: img, title: title, id: id}))
         }
@@ -338,6 +343,11 @@ export class ManhwaEighteen extends Source {
         let primaryText = createIconText({ text: $("span", textContext).text() });
 
         id = id.replace(".html", '')
+
+        // If the image came from a CDN, we need to remove the ME_DOMAIN prefix
+        if(img.split('https').length > 2) {
+          img = img.substring(ME_DOMAIN.length)
+        }
 
         latest.push(createMangaTile({
             title: createIconText({text: title}),

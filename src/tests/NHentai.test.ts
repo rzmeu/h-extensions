@@ -18,12 +18,10 @@ describe('N-Hentai Tests', function () {
     var hentaiId = "318842"; 
 
     it("Retrieve Manga Details", async () => {
-        let details = await wrapper.getMangaDetails(source, [hentaiId]);
-        expect(details, "No results found with test-defined ID [" + hentaiId + "]").to.be.an('array');
-        expect(details).to.not.have.lengthOf(0, "Empty response from server");
+        let details = await wrapper.getMangaDetails(source, hentaiId);
 
         // Validate that the fields are filled - Note that there are no artists on Manganelo that I can tell
-        let data = details[0];
+        let data = details;
         expect(data.id, "Missing ID").to.be.not.empty;
         expect(data.image, "Missing Image").to.be.not.empty;
         expect(data.artist, "Missing Artist").to.be.not.empty;
@@ -48,34 +46,14 @@ describe('N-Hentai Tests', function () {
         expect(data.pages, "No pages present").to.be.not.empty;
     });
 
-    it("Searching for Manga With Valid Tags", async () => {
-        let testSearch = createSearchRequest({
-            title: 'female',
-            includeContent: ['bikini'],
-            excludeContent: ['sole female'],
-        });
-
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
-
-        expect(result, "No response from server").to.exist;
-
-        expect(result.id, "No ID found for search query").to.be.not.empty;
-        expect(result.image, "No image found for search").to.be.not.empty;
-        expect(result.title, "No title").to.be.not.null;
-        expect(result.subtitleText, "No subtitle text").to.be.not.null;
-        expect(result.primaryText, "No primary text").to.be.not.null;
-        expect(result.secondaryText, "No secondary text").to.be.not.null;
-
-    });
 
     it("Searching for Manga With Multiple Keywords", async () => {
         let testSearch = createSearchRequest({
             title: 'female bikini',
         });
 
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
+        let search = await wrapper.searchRequest(source, testSearch);
+        let result = search.results[0];
 
         expect(result, "No response from server").to.exist;
 
@@ -93,8 +71,8 @@ describe('N-Hentai Tests', function () {
             title: '312483',
         });
 
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
+        let search = await wrapper.searchRequest(source, testSearch);
+        let result = search.results[0];
         expect(result).to.exist
 
         expect(result.id).to.exist
@@ -107,8 +85,8 @@ describe('N-Hentai Tests', function () {
             title: '98125',
         });
 
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
+        let search = await wrapper.searchRequest(source, testSearch);
+        let result = search.results[0];
         expect(result).to.exist
 
         expect(result.id).to.exist
@@ -121,43 +99,14 @@ describe('N-Hentai Tests', function () {
             title: '999999',
         });
 
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
-        expect(result).to.not.exist;    // There should be no entries with this tag!
+        try {
+            let search = await wrapper.searchRequest(source, testSearch);
+            expect(false)
+        }
+        catch {
+            expect(true)
+        }
     });
-
-    it("Searching for Manga With Invalid Tags", async () => {
-        let testSearch = createSearchRequest({
-            title: 'Ratiaion House',
-            excludeDemographic: ['Seinen']
-        });
-
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
-        expect(result).to.not.exist;    // There should be no entries with this tag!
-    });
-
-
-    it("Searching for Manga by artist", async() => {
-        let testSearch = createSearchRequest({
-            artist: 'shiraichigo'
-        })
-
-        let search = await wrapper.search(source, testSearch, 1)
-        let result = search[0]
-        expect(result).to.exist
-    })
-
-    it("Searching for Manga by invalid artist", async() => {
-        let testSearch = createSearchRequest({
-            artist: 'Daniel Kovalevich'
-        })
-
-        let search = await wrapper.search(source, testSearch, 1)
-        let result = search[0]
-
-        expect(result).to.not.exist
-    })
 
     it("Searching with Hentai settings disabled", async() => {
         let testSearch = createSearchRequest({
@@ -165,8 +114,8 @@ describe('N-Hentai Tests', function () {
             hStatus: false
         })
 
-        let search = await wrapper.search(source, testSearch, 1)
-        expect(search).to.be.empty
+        let search = await wrapper.searchRequest(source, testSearch)
+        expect(search.results).to.be.empty
     })
 
 
@@ -182,14 +131,8 @@ describe('N-Hentai Tests', function () {
         expect(newHentai.items, "No items available for popular titles").to.not.be.empty;
     });
 
-    it("Retrieve Tags", async() => {
-        let data = await wrapper.getTags(source)
-        expect(data, "No response from server").to.exist
-        expect(data[0].tags).to.not.be.empty  
-    })
-
     it("Show More Homepage data", async() => {
-        let data = await wrapper.getViewMoreItems(source, "none", 2)
+        let data = await wrapper.getViewMoreItems(source, "none", {})
         expect(data, "No response from server").to.exist;
         expect(data, "No response from server").to.be.not.empty;
     })

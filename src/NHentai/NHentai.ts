@@ -1,23 +1,23 @@
-import { Source, Manga, Chapter, ChapterDetails, HomeSectionRequest, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType, PagedResults } from "paperback-extensions-common"
+import { Source, Manga, Chapter, ChapterDetails, HomeSection, MangaTile, SearchRequest, LanguageCode, TagSection, Request, SourceTag, TagType, PagedResults, SourceInfo } from "paperback-extensions-common"
 const NHENTAI_DOMAIN = 'https://nhentai.net'
+
+export const NHentaiInfo: SourceInfo = {
+  version: '2.0.0',
+  name: 'nHentai',
+  description: `Extension which pulls 18+ content from nHentai. (Literally all of it. We know why you're here)`,
+  author: `VibrantClouds`,
+  authorWebsite: `https://github.com/conradweiser`,
+  icon: `logo.png`,
+  hentaiSource: true,
+  sourceTags: [{text: "18+", type: TagType.YELLOW}],
+  websiteBaseURL: NHENTAI_DOMAIN
+}
 
 export class NHentai extends Source {
 
   constructor(cheerio: CheerioAPI) {
     super(cheerio)
   }
-
-  get version(): string { return '0.9.3' }
-  get name(): string { return 'nHentai' }
-  get description(): string { return 'Extension that pulls manga from nHentai' }
-  get author(): string { return 'Conrad Weiser' }
-  get authorWebsite(): string { return 'http://github.com/conradweiser' }
-  get icon(): string { return "logo.png" } // The website has SVG versions, I had to find one off of a different source
-  get hentaiSource(): boolean { return true }
-  getMangaShareUrl(mangaId: string): string | null { return `https://nhentai.net/g/${mangaId}` }
-  get sourceTags(): SourceTag[] { return [{ text: "18+", type: TagType.YELLOW }] }
-  get websiteBaseURL(): string { return NHENTAI_DOMAIN }
-
 
   convertLanguageToCode(language: string) {
     switch (language.toLowerCase()) {
@@ -28,22 +28,16 @@ export class NHentai extends Source {
     }
   }
 
-  getMangaDetailsRequest(ids: string[]): Request[] {
-    let requests: Request[] = []
-    for (let id of ids) {
-      let metadata = { 'id': id }
-      requests.push(createRequestObject({
-        url: `${NHENTAI_DOMAIN}/g/${id}`,
-        metadata: metadata,
-        method: 'GET'
-      }))
-    }
-    return requests
-  }
+  async getMangaDetails(mangaId: string): Promise<Manga> {
 
-  getMangaDetails(data: any, metadata: any): Manga[] {
-    let manga: Manga[] = []
-    let $ = this.cheerio.load(data)
+    const request = createRequestObject({
+      url: `${NHENTAI_DOMAIN}/g/${mangaId}`,
+      method: 'GET'
+    })
+
+    let data = await this.requestManager.schedule(request, 1)
+
+    let $ = this.cheerio.load(data.data)
     let info = $('[itemprop=name]')
     let image = $('[itemprop=image]').attr('content') ?? ''
     let title = $('[itemprop=name]').attr('content') ?? ''
@@ -93,8 +87,8 @@ export class NHentai extends Source {
     let status = 1
     let hentai = true                 // I'm assuming that's why you're here!
 
-    manga.push(createManga({
-      id: metadata.id,
+    return createManga({
+      id: mangaId,
       titles: titles,
       image: image,
       rating: 0,
@@ -102,21 +96,19 @@ export class NHentai extends Source {
       artist: artist,
       tags: tagSections,
       hentai: hentai
-    }))
-    return manga
-  }
-
-  getChaptersRequest(mangaId: string): Request {
-    let metadata = { 'id': mangaId }
-    return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/g/${mangaId}`,
-      method: "GET",
-      metadata: metadata
     })
   }
+  
+  async getChapters(mangaId: string): Promise<Chapter[]> {
 
-  getChapters(data: any, metadata: any): Chapter[] {
-    let $ = this.cheerio.load(data)
+    const request = createRequestObject({
+      url: `${NHENTAI_DOMAIN}/g/${mangaId}`,
+      method: "GET"
+    })
+
+    let data = await this.requestManager.schedule(request, 1)
+
+    let $ = this.cheerio.load(data.data)
     let chapters: Chapter[] = []
 
     // NHentai is unique, where there is only ever one chapter.
@@ -149,7 +141,7 @@ export class NHentai extends Source {
 
     chapters.push(createChapter({
       id: "1",                                    // Only ever one chapter on this source
-      mangaId: metadata.id,
+      mangaId: mangaId,
       name: title,
       chapNum: 1,
       time: time,
@@ -158,17 +150,14 @@ export class NHentai extends Source {
     return chapters
   }
 
-  getChapterDetailsRequest(mangaId: string, chapId: string): Request {
-    let metadata = { 'mangaId': mangaId, 'chapterId': chapId }
-    return createRequestObject({
+  async getChapterDetails(mangaId: string, chapterId: string): Promise<ChapterDetails> {
+
+    const request = createRequestObject({
       url: `${NHENTAI_DOMAIN}/g/${mangaId}`,
-      metadata: metadata,
       method: 'GET',
     })
-  }
-
-  getChapterDetails(data: any, metadata: any): ChapterDetails {
-    let $ = this.cheerio.load(data)
+    let data = await this.requestManager.schedule(request, 1)
+    let $ = this.cheerio.load(data.data)
 
     // Get the number of chapters, we can generate URLs using that as a basis
     let pages: string[] = []
@@ -190,71 +179,55 @@ export class NHentai extends Source {
     }
 
     let chapterDetails = createChapterDetails({
-      id: metadata.chapterId,
-      mangaId: metadata.mangaId,
+      id: chapterId,
+      mangaId: mangaId,
       pages: pages,
       longStrip: false
     })
-
 
     return chapterDetails
   }
 
 
-  searchRequest(query: SearchRequest): Request | null {
+  async searchRequest(query: SearchRequest, metadata: any): Promise<PagedResults> {
 
-    // If h-sources are disabled for the search request, always return null
-    if (query.hStatus === false) {
-      return null
+    metadata = metadata ?? {}
+    let page = metadata.page ?? 1
+    let sixDigit: boolean = false
+
+    // If h-sources are disabled for the search request, always return empty
+    if (query.hStatus === false || !query.title) {    // MARK: We only support title searches for now until advanced search is implemented
+      return createPagedResults({results: []})
     }
+
+    let request: Request | undefined = undefined
 
     // If the search query is a six digit direct link to a manga, create a request to just that URL and alert the handler via metadata
     if (query.title?.match(/\d{5,6}/)) {
-      return createRequestObject({
+      request = createRequestObject({
         url: `${NHENTAI_DOMAIN}/g/${query.title}`,
-        metadata: { sixDigit: true },
-        timeout: 4000,
         method: "GET"
       })
+      sixDigit = true
+    }
+    else {
+      query.title = query.title?.trim()
+      query.title = query.title.replace(" ", "+") + '+'
+
+      request = createRequestObject({
+        url: `${NHENTAI_DOMAIN}/search/?q=${query.title}&page=${page}`,
+        method: "GET"
+      })
+      sixDigit = false
     }
 
-    // Concat all of the available options together into a search keyword which can be supplied as a GET request param
-    let param = ''
-    if (query.title) {
-      param += query.title.trim().replace(" ", "+")
-    }
-    if (query.includeContent) {
-      for (let content in query.includeContent) {
-        param += ('tag:"' + query.includeContent[content].trim().replace(" ", "+"))
-      }
-    }
-    if (query.excludeContent) {
-      for (let content in query.excludeContent) {
-        param += ('-tag:"' + query.excludeContent[content].trim().replace(" ", "+"))
-      }
-    }
+    let data = await this.requestManager.schedule(request, 1)
 
-    if (query.artist) {
-      param += ("Artist:" + query.artist.trim().replace(" ", "+"))
-    }
-
-    param = param.trim()
-
-    return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/search/?q=${param}&page=1`,
-      metadata: { sixDigit: false },
-      timeout: 4000,
-      method: "GET"
-    })
-  }
-
-  search(data: any, metadata: any): PagedResults {
-
-    let $ = this.cheerio.load(data)
+    let $ = this.cheerio.load(data.data)
     let mangaTiles: MangaTile[] = []
 
     // Was this a six digit request? 
-    if (metadata.sixDigit) {
+    if (sixDigit) {
       // Retrieve the ID from the body
       let contextNode = $('#bigcontainer')
       let href = $('a', contextNode).attr('href')
@@ -287,7 +260,6 @@ export class NHentai extends Source {
         image = 'http:' + $('img', currNode).attr('src')!
       }
 
-
       let title = $('.caption', currNode).text()
       let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
 
@@ -301,75 +273,106 @@ export class NHentai extends Source {
       }))
     }
 
-    // TODO:  Are there more search results that we can retrieve?
-
+    // Do we have any additional pages? If there is an `a.last` element, we do!
+    if($('a.last')) {
+      metadata.page = ++page
+    }
+    else {
+      metadata = undefined
+    }
 
     return createPagedResults({
-      results: mangaTiles
+      results: mangaTiles,
+      metadata: metadata
     })
   }
 
-  getTagsRequest(): Request | null {
-    return createRequestObject({
-      url: `${NHENTAI_DOMAIN}/tags/popular`,
-      timeout: 4000,
-      method: "GET"
-    })
-  }
 
-  getTags(data: any): TagSection[] | null {
-    let tagCategoryId = 'Popular'     // There are no tag categories, just 'tags', as we're parsing the first page of popular tags, just label it as popular
-    let tagLabel = 'Popular'
-    let tagSection: TagSection = createTagSection({
-      id: tagCategoryId,
-      label: tagLabel,
-      tags: []
+  async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
+
+    let popular: HomeSection = createHomeSection({id: 'popular', title: 'Popular Now'})
+    let newUploads: HomeSection = createHomeSection({id: 'new', title: 'New Uploads', view_more: true})
+    sectionCallback(popular)
+    sectionCallback(newUploads)
+
+    const request = createRequestObject({
+      url: `${NHENTAI_DOMAIN}`,
+      method: 'GET'
     })
 
-    let $ = this.cheerio.load(data)
-    let container = $("#tag-container")
+    let data = await this.requestManager.schedule(request, 1)
 
-    for (let item of $('a', container).toArray()) {
+    let popularHentai: MangaTile[] = []
+    let newHentai: MangaTile[] = []
+    let $ = this.cheerio.load(data.data)
+
+    let containerNode = $('.index-container').first()
+    for (let item of $('.gallery', containerNode).toArray()) {
       let currNode = $(item)
+      let image = $('img', currNode).attr('data-src')!
 
-      // Grab the tag and add it to the list
-      let tagName = currNode.text()     // Consider pulling the legitimate tag IDs instead of the names?
+      // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
+      if (image == undefined) {
+        image = 'http:' + $('img', currNode).attr('src')!
+      }
 
-      // Tags come in the form 'Sole female (99,999) or some form of numbers in parenths. Remove that from the string
-      tagName = tagName.replace(/\(\d*,*\d*\)/, "").trim()
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      let title = $('.caption', currNode).text()
+      title = title.replace(/(\[.+?\])/g, "").trim()
 
-      tagSection.tags.push(createTag({
-        id: tagName,
-        label: tagName
+      let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
+
+      popularHentai.push(createMangaTile({
+        id: idHref[1],
+        title: createIconText({ text: title }),
+        image: image
       }))
     }
-    return [tagSection]
+
+    popular.items = popularHentai
+    sectionCallback(popular)
+
+    containerNode = $('.index-container').last()
+    for (let item of $('.gallery', containerNode).toArray()) {
+      let currNode = $(item)
+      let image = $('img', currNode).attr('data-src')!
+
+      // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
+      if (image == undefined) {
+        image = 'http:' + $('img', currNode).attr('src')!
+      }
+
+      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
+      let title = $('.caption', currNode).text()
+      title = title.replace(/(\[.+?\])/g, "").trim()
+
+      let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
+
+      newHentai.push(createMangaTile({
+        id: idHref[1],
+        title: createIconText({ text: title }),
+        image: image
+      }))
+    }
+
+    newUploads.items = newHentai
+    sectionCallback(newUploads)
+
   }
 
+  async getViewMoreItems(homepageSectionId: string, metadata: any): Promise<PagedResults | null> {
+    metadata = metadata ?? {}
+    let page = metadata.page ?? 1
 
-  getHomePageSectionRequest(): HomeSectionRequest[] | null {
-
-    let request = createRequestObject({ url: `${NHENTAI_DOMAIN}`, method: 'GET', })
-    let homeSection = createHomeSection({
-      id: 'latest_hentai', title: 'LATEST HENTAI', view_more: createRequestObject({
-        url: `${NHENTAI_DOMAIN}/?page=1`,
-        method: 'GET',
-        metadata: {
-          page: 2
-        }
-      })
+    // This function only works for New Uploads, no need to check the section ID
+    const request = createRequestObject({
+      url: `${NHENTAI_DOMAIN}/?page=${page}`,
+      method: 'GET'
     })
-    return [createHomeSectionRequest({ request: request, sections: [homeSection] })]
 
-  }
+    let data = await this.requestManager.schedule(request, 1)
 
-  getViewMoreItems(data: string, key: string, metadata: any): PagedResults {
-
-    // Debug out to console that this event occured
-    console.log(`getViewMoreItems request made to ${NHENTAI_DOMAIN}/?page=${metadata.page}`)
-
-    let $ = this.cheerio.load(data)
-    metadata.page = metadata.page + 1
+    let $ = this.cheerio.load(data.data)
 
     let discoveredObjects: MangaTile[] = []
 
@@ -389,8 +392,6 @@ export class NHentai extends Source {
 
       let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
 
-      console.log(`[LOG] Discovered ${idHref[1]} in getViewMoreItems`)
-
       discoveredObjects.push(createMangaTile({
         id: idHref[1],
         title: createIconText({ text: title }),
@@ -398,46 +399,18 @@ export class NHentai extends Source {
       }))
     }
 
+    // Do we have any additional pages? If there is an `a.last` element, we do!
+    if($('a.last')) {
+      metadata.page = ++page
+    }
+    else {
+      metadata = undefined
+    }
 
     return createPagedResults({
       results: discoveredObjects,
-        nextPage: createRequestObject({
-        url: `${NHENTAI_DOMAIN}/?page=${metadata.page}`,
-        method: 'get',
-        metadata: metadata
-      })
+      metadata: metadata
     })
 
-  }
-
-  getHomePageSections(data: any, section: HomeSection[]): HomeSection[] | null {
-    let updatedHentai: MangaTile[] = []
-    let $ = this.cheerio.load(data)
-
-    let containerNode = $('.index-container')
-    for (let item of $('.gallery', containerNode).toArray()) {
-      let currNode = $(item)
-      let image = $('img', currNode).attr('data-src')!
-
-      // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
-      if (image == undefined) {
-        image = 'http:' + $('img', currNode).attr('src')!
-      }
-
-      // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
-      let title = $('.caption', currNode).text()
-      title = title.replace(/(\[.+?\])/g, "").trim()
-
-      let idHref = $('a', currNode).attr('href')?.match(/\/(\d*)\//)!
-
-      updatedHentai.push(createMangaTile({
-        id: idHref[1],
-        title: createIconText({ text: title }),
-        image: image
-      }))
-    }
-
-    section[0].items = updatedHentai
-    return section
   }
 }

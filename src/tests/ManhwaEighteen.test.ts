@@ -18,12 +18,10 @@ describe('ManhwaEighteen Tests', function () {
     var mangaId = "manga-return-girlfriend-raw";
 
     it("Retrieve Manga Details", async () => {
-        let details = await wrapper.getMangaDetails(source, [mangaId]);
-        expect(details, "No results found with test-defined ID [" + mangaId + "]").to.be.an('array');
-        expect(details).to.not.have.lengthOf(0, "Empty response from server");
+        let details = await wrapper.getMangaDetails(source, mangaId);
 
         // Validate that the fields are filled
-        let data = details[0];
+        let data = details;
         expect(data.id, "Missing ID").to.be.not.empty;
         expect(data.image, "Missing Image").to.be.not.empty;
         expect(data.status, "Missing Status").to.exist;
@@ -57,8 +55,8 @@ describe('ManhwaEighteen Tests', function () {
             title: 'Silent War'
         });
 
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
+        let search = await wrapper.searchRequest(source, testSearch);
+        let result = search.results[0];
 
         expect(result, "No response from server").to.exist;
 
@@ -73,8 +71,8 @@ describe('ManhwaEighteen Tests', function () {
             title: 'this_search_definitely_is_not_valid_asdklfhjawelorghawlehdsf'
         });
 
-        let search = await wrapper.search(source, testSearch, 1);
-        let result = search[0];
+        let search = await wrapper.searchRequest(source, testSearch);
+        let result = search.results[0];
 
         expect(result, "No response from server").to.not.exist;
     });
@@ -91,7 +89,11 @@ describe('ManhwaEighteen Tests', function () {
         expect(latest.title, "Latest Manhwa section does not exist").to.not.be.empty;
         expect(latest.items, "No items available for Latest Manhwa").to.not.be.empty;
 
-
     });
+
+    it("Get view more sections for 'Latest Manhwa'", async () => {
+        let data = await wrapper.getViewMoreItems(source, 'latest', {})
+        
+    })
 
 })

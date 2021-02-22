@@ -357,7 +357,7 @@ export class ManhwaEighteen extends Source {
 
     if(homepageSectionId.includes("latest")) {
         request = createRequestObject({
-            url: `https://manhwa18.com/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=last_update&sort_type=DESC`,
+            url: `${ME_DOMAIN}/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=last_update&sort_type=DESC`,
             method: `GET`,
             headers: {
                 referer: ME_DOMAIN
@@ -366,7 +366,7 @@ export class ManhwaEighteen extends Source {
     }
     else if(homepageSectionId.includes("popular")) {
         request = createRequestObject({
-            url: `https://manhwa18.com/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`,
+            url: `${ME_DOMAIN}/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`,
             method: 'GET',
             headers: {
                 referer: ME_DOMAIN

@@ -16,7 +16,7 @@ import {
   PagedResults,
   SourceInfo,
 } from "paperback-extensions-common";
-const ME_DOMAIN = "https://manhwa18.com";
+const ME_DOMAIN = "https://manhwa18.net";
 
 export const ManhwaEighteenInfo: SourceInfo = {
   version: "2.0.0",

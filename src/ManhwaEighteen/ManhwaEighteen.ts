@@ -19,7 +19,7 @@ import {
 const ME_DOMAIN = "https://manhwa18.net";
 
 export const ManhwaEighteenInfo: SourceInfo = {
-  version: "2.0.0",
+  version: "2.0.1",
   name: "Manhwa18",
   description: `Extension which pulls content from Manhwa18.`,
   author: `VibrantClouds`,

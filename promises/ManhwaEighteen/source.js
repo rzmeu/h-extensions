@@ -589,7 +589,7 @@ exports.ManhwaEighteen = exports.ManhwaEighteenInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const ME_DOMAIN = "https://manhwa18.net";
 exports.ManhwaEighteenInfo = {
-    version: "2.0.0",
+    version: "2.0.1",
     name: "Manhwa18",
     description: `Extension which pulls content from Manhwa18.`,
     author: `VibrantClouds`,
@@ -858,7 +858,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         let request = undefined;
         if (homepageSectionId.includes("latest")) {
             request = createRequestObject({
-                url: `https://manhwa18.com/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=last_update&sort_type=DESC`,
+                url: `${ME_DOMAIN}/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=last_update&sort_type=DESC`,
                 method: `GET`,
                 headers: {
                     referer: ME_DOMAIN
@@ -867,7 +867,7 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
         }
         else if (homepageSectionId.includes("popular")) {
             request = createRequestObject({
-                url: `https://manhwa18.com/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`,
+                url: `${ME_DOMAIN}/manga-list.html?listType=pagination&page=${page}&artist=&author=&group=&m_status=&name=&genre=&ungenre=&sort=views&sort_type=DESC`,
                 method: 'GET',
                 headers: {
                     referer: ME_DOMAIN

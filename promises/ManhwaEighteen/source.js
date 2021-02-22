@@ -589,7 +589,7 @@ exports.ManhwaEighteen = exports.ManhwaEighteenInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const ME_DOMAIN = "https://manhwa18.net";
 exports.ManhwaEighteenInfo = {
-    version: "2.0.1",
+    version: "2.0.2",
     name: "Manhwa18",
     description: `Extension which pulls content from Manhwa18.`,
     author: `VibrantClouds`,

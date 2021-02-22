@@ -587,7 +587,7 @@ __exportStar(require("./OAuth"), exports);
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ManhwaEighteen = exports.ManhwaEighteenInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
-const ME_DOMAIN = "https://manhwa18.com";
+const ME_DOMAIN = "https://manhwa18.net";
 exports.ManhwaEighteenInfo = {
     version: "2.0.0",
     name: "Manhwa18",

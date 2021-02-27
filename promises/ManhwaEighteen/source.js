@@ -589,7 +589,7 @@ exports.ManhwaEighteen = exports.ManhwaEighteenInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const ME_DOMAIN = "https://manhwa18.net";
 exports.ManhwaEighteenInfo = {
-    version: "2.0.4",
+    version: "2.0.5",
     name: "Manhwa18",
     description: `Extension which pulls content from Manhwa18.`,
     author: `VibrantClouds`,
@@ -602,7 +602,6 @@ exports.ManhwaEighteenInfo = {
 class ManhwaEighteen extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
-        this.requestManager.requestTimeout = 8000; // Manhwa18 is not a fast source..
     }
     async getMangaDetails(mangaId) {
         var _a, _b, _c, _d;

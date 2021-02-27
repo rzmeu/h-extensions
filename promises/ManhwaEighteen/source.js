@@ -589,7 +589,7 @@ exports.ManhwaEighteen = exports.ManhwaEighteenInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const ME_DOMAIN = "https://manhwa18.net";
 exports.ManhwaEighteenInfo = {
-    version: "2.0.2",
+    version: "2.0.3",
     name: "Manhwa18",
     description: `Extension which pulls content from Manhwa18.`,
     author: `VibrantClouds`,
@@ -602,6 +602,7 @@ exports.ManhwaEighteenInfo = {
 class ManhwaEighteen extends paperback_extensions_common_1.Source {
     constructor(cheerio) {
         super(cheerio);
+        this.requestManager.requestTimeout = 8000; // Manhwa18 is not a fast source..
     }
     async getMangaDetails(mangaId) {
         var _a, _b, _c, _d;
@@ -907,6 +908,52 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
             results: results,
             metadata: metadata
         });
+    }
+    async filterUpdatedManga(mangaUpdatesFoundCallback, time, ids) {
+        //MW18 is kinda sketchy where the only place that shows update times is the main page. We'll do the best we can.
+        var _a;
+        const request = createRequestObject({
+            url: `${ME_DOMAIN}`,
+            method: 'GET'
+        });
+        let data = await this.requestManager.schedule(request, 1);
+        let $ = this.cheerio.load(data.data);
+        let returnObject = {
+            ids: [],
+        };
+        for (let content of $("#contentstory").toArray()) {
+            for (let item of $("div.itemupdate", $(content)).toArray()) {
+                let id = (_a = $("a", $(item)).attr("href")) === null || _a === void 0 ? void 0 : _a.replace(".html", "");
+                let dateUpdated = $("time", $(item)).text().trim();
+                let date;
+                // Was this updated minutes ago?
+                if (dateUpdated.includes("minutes")) {
+                    let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
+                    date = new Date();
+                    date.setMinutes(date.getMinutes() - parsedDateNumeric);
+                }
+                // Was it hours ago?
+                else if (dateUpdated.includes("hours")) {
+                    let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
+                    date = new Date();
+                    date.setHours(date.getHours() - parsedDateNumeric);
+                }
+                // Otherwise it was days
+                else {
+                    let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
+                    date = new Date();
+                    date.setDate(date.getDate() - parsedDateNumeric);
+                }
+                if (!id) {
+                    continue;
+                }
+                // If this was before our reference time, add it to the list of updates
+                if (date > time) {
+                    returnObject.ids.push(id);
+                }
+            }
+        }
+        mangaUpdatesFoundCallback(returnObject);
     }
 }
 exports.ManhwaEighteen = ManhwaEighteen;

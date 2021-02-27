@@ -18,7 +18,7 @@ import {
 const ME_DOMAIN = "https://manhwa18.net";
 
 export const ManhwaEighteenInfo: SourceInfo = {
-  version: "2.0.4",
+  version: "2.0.5",
   name: "Manhwa18",
   description: `Extension which pulls content from Manhwa18.`,
   author: `VibrantClouds`,
@@ -32,7 +32,6 @@ export const ManhwaEighteenInfo: SourceInfo = {
 export class ManhwaEighteen extends Source {
   constructor(cheerio: CheerioAPI) {
     super(cheerio);
-    this.requestManager.requestTimeout = 8000 // Manhwa18 is not a fast source..
   }
 
   async getMangaDetails(mangaId: string): Promise<Manga> {

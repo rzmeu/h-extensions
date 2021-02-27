@@ -11,7 +11,6 @@ import {
   TagSection,
   Request,
   MangaUpdates,
-  SourceTag,
   TagType,
   PagedResults,
   SourceInfo,
@@ -19,7 +18,7 @@ import {
 const ME_DOMAIN = "https://manhwa18.net";
 
 export const ManhwaEighteenInfo: SourceInfo = {
-  version: "2.0.2",
+  version: "2.0.3",
   name: "Manhwa18",
   description: `Extension which pulls content from Manhwa18.`,
   author: `VibrantClouds`,
@@ -33,6 +32,7 @@ export const ManhwaEighteenInfo: SourceInfo = {
 export class ManhwaEighteen extends Source {
   constructor(cheerio: CheerioAPI) {
     super(cheerio);
+    this.requestManager.requestTimeout = 8000 // Manhwa18 is not a fast source..
   }
 
   async getMangaDetails(mangaId: string): Promise<Manga> {
@@ -417,63 +417,52 @@ export class ManhwaEighteen extends Source {
 
   }
 
-  //   filterUpdatedMangaRequest(ids: string[], time: Date): Request {
-  //     let metadata = { ids: ids, referenceTime: time, page: 1 };
+  async filterUpdatedManga(mangaUpdatesFoundCallback: (updates: MangaUpdates) => void, time: Date, ids: string[]) {
+    //MW18 is kinda sketchy where the only place that shows update times is the main page. We'll do the best we can.
 
-  //     return createRequestObject({
-  //       url: `${ME_DOMAIN}/index.html`,
-  //       method: "GET",
-  //       metadata: metadata,
-  //     });
-  //   }
+    const request = createRequestObject({
+      url: `${ME_DOMAIN}`,
+      method: 'GET'
+    })
 
-  //   filterUpdatedManga(data: any, metadata: any): MangaUpdates {
-  //     let $ = this.cheerio.load(data);
+    let data = await this.requestManager.schedule(request, 1)
 
-  //     //MW18 is kinda sketchy where the only place that shows update times is the main page. We'll do the best we can.
-  //     let returnObject: MangaUpdates = {
-  //       ids: [],
-  //     };
-
-  //     for (let content of $("#contentstory").toArray()) {
-  //       for (let item of $(".itemupdate", $(content)).toArray()) {
-  //         let id = $("a", $(item)).attr("href")?.replace(".html", "");
-  //         let dateUpdated = $("time", $(item)).text().trim();
-
-  //         let date: Date;
-
-  //         // Was this updated minutes ago?
-  //         if (dateUpdated.includes("minutes")) {
-  //           let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
-  //           date = new Date();
-  //           date.setMinutes(date.getMinutes() - parsedDateNumeric);
-  //         }
-
-  //         // Was it hours ago?
-  //         else if (dateUpdated.includes("hours")) {
-  //           let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
-  //           date = new Date();
-  //           date.setHours(date.getHours() - parsedDateNumeric);
-  //         }
-
-  //         // Otherwise it was days
-  //         else {
-  //           let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
-  //           date = new Date();
-  //           date.setDate(date.getDate() - parsedDateNumeric);
-  //         }
-
-  //         if (!id) {
-  //           continue;
-  //         }
-
-  //         // If this was before our reference time, add it to the list of updates
-  //         if (date < metadata.referenceTime) {
-  //           returnObject.ids.push(id);
-  //         }
-  //       }
-  //     }
-
-  //     return returnObject;
-  //   }
+    let $ = this.cheerio.load(data.data);
+    let returnObject: MangaUpdates = {
+      ids: [],
+    };
+    for (let content of $("#contentstory").toArray()) {
+      for (let item of $("div.itemupdate", $(content)).toArray()) {
+        let id = $("a", $(item)).attr("href")?.replace(".html", "");
+        let dateUpdated = $("time", $(item)).text().trim();
+        let date: Date;
+        // Was this updated minutes ago?
+        if (dateUpdated.includes("minutes")) {
+          let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
+          date = new Date();
+          date.setMinutes(date.getMinutes() - parsedDateNumeric);
+        }
+        // Was it hours ago?
+        else if (dateUpdated.includes("hours")) {
+          let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
+          date = new Date();
+          date.setHours(date.getHours() - parsedDateNumeric);
+        }
+        // Otherwise it was days
+        else {
+          let parsedDateNumeric = Number(dateUpdated.replace(/\D/g, ""));
+          date = new Date();
+          date.setDate(date.getDate() - parsedDateNumeric);
+        }
+        if (!id) {
+          continue;
+        }
+        // If this was before our reference time, add it to the list of updates
+        if (date > time) {
+          returnObject.ids.push(id);
+        }
+      }
+    }
+    mangaUpdatesFoundCallback(returnObject)
+    }
 }

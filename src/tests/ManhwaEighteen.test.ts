@@ -1,6 +1,9 @@
+import axios from 'axios';
 import cheerio from 'cheerio'
 import { APIWrapper, Source } from 'paperback-extensions-common';
 import { ManhwaEighteen } from '../ManhwaEighteen/ManhwaEighteen';
+
+const ME_DOMAIN = "https://manhwa18.com";
 
 describe('ManhwaEighteen Tests', function () {
 
@@ -94,6 +97,26 @@ describe('ManhwaEighteen Tests', function () {
     it("Get view more sections for 'Latest Manhwa'", async () => {
         let data = await wrapper.getViewMoreItems(source, 'latest', {})
         
+    })
+
+    it("Check for updates", async () => {
+        /* Manhwa18 only shows updates on the main page. In order to accurately test this functionality
+           we make an axios call to the main page and gather all of the available titles on this front page.
+        */
+
+        let pageData = (await axios.get(ME_DOMAIN)).data
+        let $ = cheerio.load(pageData)
+
+        let availableItems: string[] = []
+        for(let title of $('div.itemupdate').toArray()) {
+            let item = $('a.cover', $(title)).attr('href')?.replace('.html', '')
+            if(item) availableItems.push(item)
+        }
+        
+        // Request the source to search for updates
+        let sourceUpdates = await wrapper.filterUpdatedManga(source, new Date("2020-1-27"), availableItems)
+
+        expect(sourceUpdates, "No available titles parsed").to.not.be.empty
     })
 
 })

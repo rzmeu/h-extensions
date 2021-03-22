@@ -589,13 +589,14 @@ exports.NHentai = exports.NHentaiInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const NHENTAI_DOMAIN = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '2.0.0',
+    version: '2.0.1',
     name: 'nHentai',
     description: `Extension which pulls 18+ content from nHentai. (Literally all of it. We know why you're here)`,
     author: `VibrantClouds`,
     authorWebsite: `https://github.com/conradweiser`,
     icon: `logo.png`,
-    hentaiSource: true,
+    //hentaiSource: true,
+    hentaiSource: false,
     sourceTags: [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }],
     websiteBaseURL: NHENTAI_DOMAIN
 };
@@ -670,7 +671,8 @@ class NHentai extends paperback_extensions_common_1.Source {
             status: status,
             artist: artist,
             tags: tagSections,
-            hentai: hentai
+            //hentai: hentai
+            hentai: false
         });
     }
     async getChapters(mangaId) {

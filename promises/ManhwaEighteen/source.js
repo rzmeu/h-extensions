@@ -589,13 +589,14 @@ exports.ManhwaEighteen = exports.ManhwaEighteenInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const ME_DOMAIN = "https://manhwa18.net";
 exports.ManhwaEighteenInfo = {
-    version: "2.0.5",
+    version: "2.0.6",
     name: "Manhwa18",
     description: `Extension which pulls content from Manhwa18.`,
     author: `VibrantClouds`,
     authorWebsite: `https://github.com/conradweiser`,
     icon: `logo.png`,
-    hentaiSource: true,
+    //hentaiSource: true,
+    hentaiSource: false,
     sourceTags: [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }],
     websiteBaseURL: ME_DOMAIN,
 };
@@ -682,7 +683,8 @@ class ManhwaEighteen extends paperback_extensions_common_1.Source {
             rating: rating,
             langFlag: lang,
             langName: lang,
-            hentai: true,
+            //hentai: true, // This is an 18+ source
+            hentai: false
         });
     }
     async getChapters(mangaId) {

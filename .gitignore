@@ -14,5 +14,6 @@ docs
 
 .idea
 
-# mac stuff
+# Mac stuff
 .DS_Store
+node_modules.nosync

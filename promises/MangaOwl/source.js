@@ -591,7 +591,7 @@ const MangaOwlParser_1 = require("./MangaOwlParser");
 const BASE = "https://www.mangaowl.com";
 exports.MangaOwlInfo = {
     icon: "icon.png",
-    version: "1.3.4",
+    version: "1.3.5",
     name: "MangaOwl",
     author: "PythonCoderAS",
     authorWebsite: "https://github.com/PythonCoderAS",
@@ -921,7 +921,7 @@ class MangaOwlParser {
                     }
                 }
                 lastNumber = chapNum;
-                const dateParts = $("small", element).first().text().split("/");
+                const dateParts = $("small:not([style])", element).first().text().split("/");
                 const chapterObj = {
                     chapNum: chapNum,
                     id: linkId,

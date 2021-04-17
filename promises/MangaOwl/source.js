@@ -591,7 +591,7 @@ const MangaOwlParser_1 = require("./MangaOwlParser");
 const BASE = "https://www.mangaowl.com";
 exports.MangaOwlInfo = {
     icon: "icon.png",
-    version: "1.3.5",
+    version: "2.0.0",
     name: "MangaOwl",
     author: "PythonCoderAS",
     authorWebsite: "https://github.com/PythonCoderAS",
@@ -618,6 +618,7 @@ class MangaOwl extends paperback_extensions_common_1.Source {
     constructor() {
         super(...arguments);
         this.parser = new MangaOwlParser_1.MangaOwlParser();
+        this.readerDomain = "chessmoba.us";
         this.requestManager = createRequestManager({
             requestsPerSecond: 3,
             requestTimeout: 30000,
@@ -742,8 +743,17 @@ class MangaOwl extends paperback_extensions_common_1.Source {
         });
     }
     async getChapterDetails(mangaId, chapterId) {
+        if (isNaN(Number(chapterId))) {
+            const match = chapterId.match(this.parser.chapterIdRegex);
+            if (match) {
+                chapterId = match[1];
+            }
+            else {
+                throw new Error("Unknown Chapter ID format.");
+            }
+        }
         const options = createRequestObject({
-            url: `${chapterId}`,
+            url: `https://${this.readerDomain}/reader/reader/${mangaId}/${chapterId}/0`,
             method: 'GET'
         });
         let response = await this.requestManager.schedule(options, 1);
@@ -850,6 +860,8 @@ class MangaOwlParser {
     constructor() {
         this.chapterTitleRegex = /Chapter ([\d.]+)/i;
         this.apiURLRegex = /window\[["']api_url["']]\s*=\s*["']([^\s'"]+)["']/i;
+        this.chapterIdRegex = /\/reader\/reader\/\d+\/(\d+)/i;
+        this.notFoundRegex = /^\s*not found\.*$/i;
     }
     decodeHTMLEntity(str) {
         return str.replace(/&#(\d+);/g, function (match, dec) {
@@ -907,31 +919,35 @@ class MangaOwlParser {
             const linkId = link.attr("href");
             const title = $("label.chapter-title", element).text().trim();
             if (linkId) {
-                const match = title.match(this.chapterTitleRegex);
-                let chapNum;
-                if (match) {
-                    chapNum = Number(match[1]);
-                }
-                else {
-                    if (lastNumber === null) {
-                        chapNum = 0;
+                const chapterIdMatch = linkId.match(this.chapterIdRegex);
+                if (chapterIdMatch) {
+                    const chapterId = chapterIdMatch[1];
+                    const match = title.match(this.chapterTitleRegex);
+                    let chapNum;
+                    if (match) {
+                        chapNum = Number(match[1]);
                     }
                     else {
-                        chapNum = Number((lastNumber + 0.001).toFixed(3));
+                        if (lastNumber === null) {
+                            chapNum = 0;
+                        }
+                        else {
+                            chapNum = Number((lastNumber + 0.001).toFixed(3));
+                        }
                     }
+                    lastNumber = chapNum;
+                    const dateParts = $("small:not([style])", element).first().text().split("/");
+                    const chapterObj = {
+                        chapNum: chapNum,
+                        id: chapterId,
+                        langCode: paperback_extensions_common_1.LanguageCode.ENGLISH,
+                        mangaId: mangaId,
+                    };
+                    if (dateParts.length === 3) {
+                        chapterObj.time = new Date(Date.UTC(Number(dateParts[2]), Number(dateParts[0]) - 1, Number(dateParts[1])));
+                    }
+                    chapters.push(createChapter(chapterObj));
                 }
-                lastNumber = chapNum;
-                const dateParts = $("small:not([style])", element).first().text().split("/");
-                const chapterObj = {
-                    chapNum: chapNum,
-                    id: linkId,
-                    langCode: paperback_extensions_common_1.LanguageCode.ENGLISH,
-                    mangaId: mangaId,
-                };
-                if (dateParts.length === 3) {
-                    chapterObj.time = new Date(Date.UTC(Number(dateParts[2]), Number(dateParts[0]) - 1, Number(dateParts[1])));
-                }
-                chapters.push(createChapter(chapterObj));
             }
         });
         return chapters;
@@ -942,7 +958,7 @@ class MangaOwlParser {
     parseManga($, mangaId) {
         var _a;
         const genreList = [];
-        const summary = $("div.description").first().children().remove().end().text().replace(/\s{2,}/, " ").trim();
+        const summary = $("div.description").first().children().remove().end().text().replaceAll(/\s{2,}/g, " ").trim();
         $("p > a.label").map(((index, element) => {
             if ("attribs" in element) {
                 genreList.push(createTag({
@@ -1028,7 +1044,7 @@ class MangaOwlParser {
                 mangaObj.lastUpdate = chapterObj.time.toString();
             }
         }
-        if (summary.length > 0) {
+        if (summary.length > 0 && !summary.match(this.notFoundRegex)) {
             mangaObj.desc = this.decodeHTMLEntity(summary.replace(/\s{2,}/, " "));
         }
         return createManga(mangaObj);

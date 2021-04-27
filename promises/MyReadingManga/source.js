@@ -722,7 +722,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const MyReadingMangaParser_1 = require("./MyReadingMangaParser");
 const MRM_DOMAIN = "https://myreadingmanga.info";
 exports.MyReadingMangaInfo = {
-    version: "1.0.1",
+    version: "1.0.2",
     name: "MyReadingManga",
     icon: "icon.png",
     author: "Ankah",
@@ -1097,8 +1097,8 @@ exports.parseMangaDetails = ($, mangaId) => {
             relatedIds.push((_g = mangaLink.split("/").reverse()[1]) !== null && _g !== void 0 ? _g : "");
         }
     }
-    if (!titles || !status)
-        throw new Error("An error occured while parsing the requested manga");
+    if (!titles)
+        throw new Error("An error occurred while parsing the requested manga");
     return createManga({
         id: mangaId,
         titles,
@@ -1176,7 +1176,7 @@ exports.parseChapterDetails = ($, mangaId, chapterId) => {
         pages.push(encodeURI(getImageSrc($(img))));
     }
     if (!pages)
-        throw new Error("An error occured while parsing pages for this chapter");
+        throw new Error("An error occurred while parsing pages for this chapter");
     return createChapterDetails({
         id: chapterId,
         mangaId: mangaId,

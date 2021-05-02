@@ -589,7 +589,7 @@ exports.NHentai = exports.NHentaiInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const NHENTAI_DOMAIN = 'https://nhentai.net';
 exports.NHentaiInfo = {
-    version: '2.0.1',
+    version: '2.0.2',
     name: 'nHentai',
     description: `Extension which pulls 18+ content from nHentai. (Literally all of it. We know why you're here)`,
     author: `VibrantClouds`,
@@ -769,7 +769,7 @@ class NHentai extends paperback_extensions_common_1.Source {
         }
         else {
             query.title = (_c = query.title) === null || _c === void 0 ? void 0 : _c.trim();
-            query.title = query.title.replace(" ", "+") + '+';
+            query.title = query.title.replace(/ /g, "+") + '+';
             request = createRequestObject({
                 url: `${NHENTAI_DOMAIN}/search/?q=${query.title}&page=${page}`,
                 method: "GET"

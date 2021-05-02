@@ -2,7 +2,7 @@ import { Source, Manga, Chapter, ChapterDetails, HomeSection, MangaTile, SearchR
 const NHENTAI_DOMAIN = 'https://nhentai.net'
 
 export const NHentaiInfo: SourceInfo = {
-  version: '2.0.1',
+  version: '2.0.2',
   name: 'nHentai',
   description: `Extension which pulls 18+ content from nHentai. (Literally all of it. We know why you're here)`,
   author: `VibrantClouds`,
@@ -214,7 +214,7 @@ export class NHentai extends Source {
     }
     else {
       query.title = query.title?.trim()
-      query.title = query.title.replace(" ", "+") + '+'
+      query.title = query.title.replace(/ /g, "+") + '+'
 
       request = createRequestObject({
         url: `${NHENTAI_DOMAIN}/search/?q=${query.title}&page=${page}`,

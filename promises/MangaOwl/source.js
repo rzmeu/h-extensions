@@ -591,7 +591,7 @@ const MangaOwlParser_1 = require("./MangaOwlParser");
 const BASE = "https://www.mangaowl.com";
 exports.MangaOwlInfo = {
     icon: "icon.png",
-    version: "2.0.0",
+    version: "2.0.2",
     name: "MangaOwl",
     author: "PythonCoderAS",
     authorWebsite: "https://github.com/PythonCoderAS",
@@ -914,7 +914,11 @@ class MangaOwlParser {
     parseChapterList($, mangaId) {
         const chapters = [];
         let lastNumber = null;
-        $("ul#simpleList li").toArray().reverse().map((element) => {
+        const selector = $("ul#simpleList li");
+        if (selector.length === 0) {
+            return chapters;
+        }
+        selector.toArray().reverse().map((element) => {
             const link = $("a", element).first();
             const linkId = link.attr("href");
             const title = $("label.chapter-title", element).text().trim();
@@ -924,7 +928,7 @@ class MangaOwlParser {
                     const chapterId = chapterIdMatch[1];
                     const match = title.match(this.chapterTitleRegex);
                     let chapNum;
-                    if (match) {
+                    if (match && !isNaN(Number(match[1]))) {
                         chapNum = Number(match[1]);
                     }
                     else {
@@ -943,7 +947,7 @@ class MangaOwlParser {
                         langCode: paperback_extensions_common_1.LanguageCode.ENGLISH,
                         mangaId: mangaId,
                     };
-                    if (dateParts.length === 3) {
+                    if (dateParts.length === 3 && !isNaN(Number(dateParts[2])) && !isNaN(Number(dateParts[0])) && !isNaN(Number(dateParts[1]))) {
                         chapterObj.time = new Date(Date.UTC(Number(dateParts[2]), Number(dateParts[0]) - 1, Number(dateParts[1])));
                     }
                     chapters.push(createChapter(chapterObj));
@@ -953,7 +957,10 @@ class MangaOwlParser {
         return chapters;
     }
     getPart($, element, partsArr, index) {
-        partsArr[index] = $("span", element).remove().end().text().replace(/\s{2,}/, " ").trim();
+        const toAdd = $("span", element).remove().end().text().replace(/\s{2,}/, " ").trim();
+        if (toAdd) {
+            partsArr[index] = toAdd;
+        }
     }
     parseManga($, mangaId) {
         var _a;
@@ -1038,7 +1045,7 @@ class MangaOwlParser {
         if (parts[3]) {
             mangaObj.views = Number((parts[3] || "0").replace(",", ""));
         }
-        if (chapterList) {
+        if (chapterList && chapterList.length > 0) {
             const chapterObj = chapterList[chapterList.length - 1];
             if (chapterObj.time) {
                 mangaObj.lastUpdate = chapterObj.time.toString();

@@ -621,7 +621,7 @@ exports.NHentai = exports.NHentaiInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Functions_1 = require("./Functions");
 exports.NHentaiInfo = {
-    version: "2.1.0",
+    version: "2.1.1",
     name: "nHentai",
     description: `Extension which pulls 18+ content from nHentai. (Literally all of it. We know why you're here)`,
     author: `VibrantClouds`,
@@ -647,8 +647,8 @@ class NHentai extends paperback_extensions_common_1.Source {
                 return paperback_extensions_common_1.LanguageCode.UNKNOWN;
         }
     }
-    async getMangaDetails(mangaId) {
-        const methodName = this.getMangaDetails.name;
+    // Makes my life easy... ＼(≧▽≦)／
+    async getResponse(mangaId, methodName) {
         const request = createRequestObject({
             url: Functions_1.NHENTAI_API("gallery") + mangaId,
             method: "GET",
@@ -667,7 +667,10 @@ class NHentai extends paperback_extensions_common_1.Source {
             : response.data;
         if (!json)
             throw new Error(`Failed to parse response on ${methodName}`);
-        // Regular Tags
+        return json;
+    }
+    async getMangaDetails(mangaId) {
+        const json = await this.getResponse(mangaId, this.getMangaDetails.name);
         let artist = [];
         let categories = [];
         let characters = [];
@@ -720,25 +723,7 @@ class NHentai extends paperback_extensions_common_1.Source {
         });
     }
     async getChapters(mangaId) {
-        const methodName = this.getChapters.name;
-        const request = createRequestObject({
-            url: Functions_1.NHENTAI_API("gallery") + mangaId,
-            method: "GET",
-            headers: {
-                "accept-encoding": "application/json",
-            },
-        });
-        const response = await this.requestManager.schedule(request, 1);
-        if (response.status > 400)
-            throw new Error(`Failed to fetch data on ${methodName} with status code: ` +
-                response.status +
-                ". Request URL: " +
-                request.url);
-        const json = typeof response.data !== "object"
-            ? JSON.parse(response.data)
-            : response.data;
-        if (!json)
-            throw new Error(`Failed to parse response on ${methodName}`);
+        const json = await this.getResponse(mangaId, this.getChapters.name);
         let language = "";
         json.tags.forEach((tag) => {
             const capped = Functions_1.capitalize(tag.name);
@@ -760,24 +745,7 @@ class NHentai extends paperback_extensions_common_1.Source {
     }
     async getChapterDetails(mangaId, chapterId) {
         const methodName = this.getChapterDetails.name;
-        const request = createRequestObject({
-            url: Functions_1.NHENTAI_API("gallery") + mangaId,
-            method: "GET",
-            headers: {
-                "accept-encoding": "application/json",
-            },
-        });
-        const response = await this.requestManager.schedule(request, 1);
-        if (response.status > 400)
-            throw new Error(`Failed to fetch data on ${methodName} with status code: ` +
-                response.status +
-                ". Request URL: " +
-                request.url);
-        const json = typeof response.data !== "object"
-            ? JSON.parse(response.data)
-            : response.data;
-        if (!json)
-            throw new Error(`Failed to parse response on ${methodName}`);
+        const json = await this.getResponse(mangaId, methodName);
         // Need to use chapterId for some reason 	╮(︶︿︶)╭
         if (!chapterId)
             chapterId = json.media_id;
@@ -791,6 +759,7 @@ class NHentai extends paperback_extensions_common_1.Source {
         });
     }
     async searchRequest(query, metadata) {
+        var _a, _b;
         const methodName = this.searchRequest.name;
         // Sets metadata if not available.
         metadata = metadata ? metadata : { nextPage: 1 };
@@ -801,9 +770,29 @@ class NHentai extends paperback_extensions_common_1.Source {
                 metadata: { nextPage: undefined, maxPages: metadata.maxPages },
             });
         }
+        let title = "";
+        // On URL title becomes a nhentai id.
+        if (((_a = query.title) === null || _a === void 0 ? void 0 : _a.startsWith("https")) || ((_b = query.title) === null || _b === void 0 ? void 0 : _b.startsWith("nhentai.net"))) {
+            title = query.title.replace(/[^0-9]/g, "");
+        }
+        else
+            title += query.title;
+        // If the query title is a number, search for the result that contains the number as it's id.
+        if (!isNaN(parseInt(title))) {
+            const response = await this.getResponse(title, methodName);
+            const result = createMangaTile({
+                id: response.id.toString(),
+                title: createIconText({ text: response.title.pretty }),
+                image: Functions_1.IMAGES(response.images, response.media_id, false)[0],
+            });
+            return createPagedResults({
+                results: [result],
+                metadata: { nextPage: undefined, maxPages: 1 },
+            });
+        }
         const request = createRequestObject({
             url: Functions_1.NHENTAI_API("galleries") +
-                Functions_1.QUERY(query.title ? query.title : query.toString(), metadata.sort, metadata.nextPage),
+                Functions_1.QUERY(title ? title : query.toString(), metadata.sort, metadata.nextPage),
             method: "GET",
             headers: {
                 "accept-encoding": "application/json",
@@ -829,7 +818,7 @@ class NHentai extends paperback_extensions_common_1.Source {
             }));
         });
         // If the limit is reached, sets `nextPage` to undefined so line: 236-242 can catch it.
-        if (metadata.nextPage === json.num_pages)
+        if (metadata.nextPage === json.num_pages || json.num_pages === 0)
             metadata = { nextPage: undefined, maxPages: json.num_pages };
         else
             metadata = { nextPage: ++metadata.nextPage, maxPages: json.num_pages };

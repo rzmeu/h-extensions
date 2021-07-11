@@ -585,34 +585,33 @@ __exportStar(require("./OAuth"), exports);
 },{"./Chapter":6,"./ChapterDetails":7,"./Constants":8,"./HomeSection":9,"./Languages":10,"./Manga":11,"./MangaTile":12,"./MangaUpdate":13,"./OAuth":14,"./PagedResults":15,"./RequestHeaders":16,"./RequestManager":17,"./RequestObject":18,"./ResponseObject":19,"./SearchRequest":20,"./SourceInfo":21,"./SourceTag":22,"./TagSection":23,"./TrackObject":24}],26:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.capitalize = exports.IMAGES = exports.QUERY = exports.NHENTAI_API = exports.NHENTAI_DOMAIN = void 0;
-// Don't think about this too much, appends the missing letters to finish the extension. (￣ω￣)
-const TYPE = (type) => {
-    if (type === "j")
-        return type + "pg";
-    if (type === "p")
-        return type + "ng";
-    else
-        return type + "if";
-};
+exports.capitalize = exports.PAGES = exports.TYPE = exports.QUERY = exports.NHENTAI_DOMAIN = void 0;
 // Exports
-exports.NHENTAI_DOMAIN = "https://nhentai.net";
-exports.NHENTAI_API = (type) => exports.NHENTAI_DOMAIN + "/api/" + type + "/";
+exports.NHENTAI_DOMAIN = 'https://nhentai.net';
 // Makes a request into a url format.
-exports.QUERY = (query, sort, page) => `search?query=${query ? query : ""}&sort=${sort ? sort : "popular"}&page=${page ? page : 1}`;
-exports.IMAGES = (images, media_Id, page) => {
-    if (page == true)
-        return images.pages.map((page, i) => `https://i.nhentai.net/galleries/${media_Id}/${[i + 1]}.${TYPE(page.t)}`);
+exports.QUERY = (query, sort, page) => `${exports.NHENTAI_DOMAIN}/api/galleries/search?query=${query ? query : ''}&sort=${sort ? sort : 'popular'}&page=${page ? page : 1}`;
+// Don't think about this too much, appends the missing letters to finish the extension. (￣ω￣)
+exports.TYPE = (type) => {
+    if (type === 'j')
+        return type + 'pg';
+    if (type === 'p')
+        return type + 'ng';
     else
-        return [
-            `https://t.nhentai.net/galleries/${media_Id}/1t.${TYPE(images.thumbnail.t)}`,
-        ];
+        return type + 'if';
 };
+// Blame Eslint
+exports.PAGES = (images, media_Id) => images.pages.map((page, i) => `https://i.nhentai.net/galleries/${media_Id}/${[i + 1]}.${exports.TYPE(page.t)}`);
 // Makes the first letter of a string capital.
-exports.capitalize = (str) => str
-    .toString()
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase())[0];
+exports.capitalize = (str) => {
+    const cappedString = str
+        .toString()
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase())[0];
+    if (!cappedString)
+        return 'Not Available';
+    else
+        return cappedString;
+};
 
 },{}],27:[function(require,module,exports){
 "use strict";
@@ -621,19 +620,23 @@ exports.NHentai = exports.NHentaiInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Functions_1 = require("./Functions");
 exports.NHentaiInfo = {
-    version: "2.1.1",
+    version: "2.2.0",
     name: "nHentai",
     description: `Extension which pulls 18+ content from nHentai. (Literally all of it. We know why you're here)`,
     author: `VibrantClouds`,
     authorWebsite: `https://github.com/conradweiser`,
-    icon: `logo.png`,
+    icon: `icon.png`,
     hentaiSource: false,
     sourceTags: [{ text: "18+", type: paperback_extensions_common_1.TagType.YELLOW }],
     websiteBaseURL: Functions_1.NHENTAI_DOMAIN,
 };
 class NHentai extends paperback_extensions_common_1.Source {
-    constructor(cheerio) {
-        super(cheerio);
+    constructor() {
+        super(...arguments);
+        this.requestManager = createRequestManager({
+            requestsPerSecond: 4,
+            requestTimeout: 15000,
+        });
     }
     convertLanguageToCode(language) {
         switch (language.toLowerCase()) {
@@ -650,7 +653,7 @@ class NHentai extends paperback_extensions_common_1.Source {
     // Makes my life easy... ＼(≧▽≦)／
     async getResponse(mangaId, methodName) {
         const request = createRequestObject({
-            url: Functions_1.NHENTAI_API("gallery") + mangaId,
+            url: Functions_1.NHENTAI_DOMAIN + "/api/gallery/" + mangaId,
             method: "GET",
             headers: {
                 "accept-encoding": "application/json",
@@ -659,9 +662,7 @@ class NHentai extends paperback_extensions_common_1.Source {
         const response = await this.requestManager.schedule(request, 1);
         if (response.status > 400)
             throw new Error(`Failed to fetch data on ${methodName} with status code: ` +
-                response.status +
-                ". Request URL: " +
-                request.url);
+                `${response.status}. Request URL: ${request.url}`);
         const json = typeof response.data !== "object"
             ? JSON.parse(response.data)
             : response.data;
@@ -671,54 +672,52 @@ class NHentai extends paperback_extensions_common_1.Source {
     }
     async getMangaDetails(mangaId) {
         const json = await this.getResponse(mangaId, this.getMangaDetails.name);
-        let artist = [];
-        let categories = [];
-        let characters = [];
-        let tags = [];
+        const artist = [];
+        const categories = [];
+        const characters = [];
+        const tags = [];
         // Iterates over tags and check for types while pushing them to the related arrays.
         json.tags.forEach((tag) => {
-            const capped = Functions_1.capitalize(tag.name);
-            if (tag.type === "artist")
-                artist.push(capped);
-            else if (tag.type === "category")
-                categories.push(createTag({ id: tag.id.toString(), label: capped }));
-            else if (tag.type === "character")
-                characters.push(createTag({ id: tag.id.toString(), label: capped }));
-            else
-                tags.push(createTag({ id: tag.id.toString(), label: capped }));
-            if (tag.type === "language")
+            if (!tag.type || !tag.name || tag.type === "language")
                 return;
+            // Return on undefined and language is not a tag.
+            else if (tag.type === "artist")
+                return artist.push(Functions_1.capitalize(tag.name));
+            else if (tag.type === "category")
+                return categories.push(createTag({ id: tag.id.toString(), label: Functions_1.capitalize(tag.name) }));
+            else if (tag.type === "character")
+                return characters.push(createTag({ id: tag.id.toString(), label: Functions_1.capitalize(tag.name) }));
+            else
+                return tags.push(createTag({ id: tag.id.toString(), label: Functions_1.capitalize(tag.name) }));
         });
-        let TagSections = [
-            createTagSection({
-                id: "category",
-                label: "Categories",
-                tags: categories,
-            }),
-            createTagSection({
-                id: "characters",
-                label: "Characters",
-                tags: characters,
-            }),
-            createTagSection({
+        const TagSections = [];
+        if (tags.length)
+            TagSections.push(createTagSection({
                 id: "tags",
                 label: "Tags",
                 tags: tags,
-            }),
-        ];
-        if (!characters.length)
-            TagSections.splice(1, 1); // Removes characters from TagSection if it's empty.
-        if (!categories.length)
-            TagSections.splice(0, 1); // Removes categories from TagSection if it's empty.
+            }));
+        if (characters.length)
+            TagSections.push(createTagSection({
+                id: "characters",
+                label: "Characters",
+                tags: characters,
+            }));
+        if (categories.length)
+            TagSections.push(createTagSection({
+                id: "category",
+                label: "Categories",
+                tags: categories,
+            }));
         return createManga({
             id: json.id.toString(),
             titles: [json.title.pretty, json.title.english, json.title.japanese],
-            image: Functions_1.IMAGES(json.images, json.media_id, false)[0],
+            image: `https://t.nhentai.net/galleries/${json.media_id}/1t.${Functions_1.TYPE(json.images.thumbnail.t)}`,
             rating: 0,
             status: 1,
             artist: artist.join(", "),
             author: artist.join(", "),
-            hentai: false,
+            hentai: true,
             tags: TagSections,
         });
     }
@@ -726,10 +725,11 @@ class NHentai extends paperback_extensions_common_1.Source {
         const json = await this.getResponse(mangaId, this.getChapters.name);
         let language = "";
         json.tags.forEach((tag) => {
-            const capped = Functions_1.capitalize(tag.name);
             if (tag.type === "language" && tag.id !== 17249)
-                language += capped;
+                return (language += Functions_1.capitalize(tag.name));
             // Tag id 17249 is "Translated" tag and it belongs to "language" type.
+            else
+                return;
         });
         return [
             createChapter({
@@ -745,16 +745,13 @@ class NHentai extends paperback_extensions_common_1.Source {
     }
     async getChapterDetails(mangaId, chapterId) {
         const methodName = this.getChapterDetails.name;
-        const json = await this.getResponse(mangaId, methodName);
-        // Need to use chapterId for some reason 	╮(︶︿︶)╭
         if (!chapterId)
-            chapterId = json.media_id;
-        if (json.media_id !== chapterId)
-            throw new Error(`Requested chapterId is different that what it should be. ${methodName}`);
+            throw new Error(`ChapterId is empty. ${methodName}.`);
+        const json = await this.getResponse(mangaId, methodName);
         return createChapterDetails({
             id: json.media_id,
             mangaId: json.id.toString(),
-            pages: Functions_1.IMAGES(json.images, json.media_id, true),
+            pages: Functions_1.PAGES(json.images, json.media_id),
             longStrip: false,
         });
     }
@@ -762,37 +759,36 @@ class NHentai extends paperback_extensions_common_1.Source {
         var _a, _b;
         const methodName = this.searchRequest.name;
         // Sets metadata if not available.
-        metadata = metadata ? metadata : { nextPage: 1 };
+        metadata = metadata ? metadata : { nextPage: 1, sort: "popular" };
         // Returns an empty result if the page limit is passed.
-        if (metadata.nextPage == undefined) {
+        if (metadata.nextPage == undefined)
             return createPagedResults({
                 results: [],
                 metadata: { nextPage: undefined, maxPages: metadata.maxPages },
             });
-        }
         let title = "";
         // On URL title becomes a nhentai id.
-        if (((_a = query.title) === null || _a === void 0 ? void 0 : _a.startsWith("https")) || ((_b = query.title) === null || _b === void 0 ? void 0 : _b.startsWith("nhentai.net"))) {
-            title = query.title.replace(/[^0-9]/g, "");
-        }
+        if (((_a = query.title) === null || _a === void 0 ? void 0 : _a.startsWith("https")) || ((_b = query.title) === null || _b === void 0 ? void 0 : _b.startsWith("nhentai.net")))
+            title += query.title.replace(/[^0-9]/g, "");
         else
             title += query.title;
-        // If the query title is a number, search for the result that contains the number as it's id.
+        // If the query title is a number, returns the result with that number as it's id.
+        // Could use typeof here but idk.
         if (!isNaN(parseInt(title))) {
             const response = await this.getResponse(title, methodName);
-            const result = createMangaTile({
-                id: response.id.toString(),
-                title: createIconText({ text: response.title.pretty }),
-                image: Functions_1.IMAGES(response.images, response.media_id, false)[0],
-            });
             return createPagedResults({
-                results: [result],
+                results: [
+                    createMangaTile({
+                        id: response.id.toString(),
+                        title: createIconText({ text: response.title.pretty }),
+                        image: `https://t.nhentai.net/galleries/${response.media_id}/1t.${Functions_1.TYPE(response.images.thumbnail.t)}`,
+                    }),
+                ],
                 metadata: { nextPage: undefined, maxPages: 1 },
             });
         }
         const request = createRequestObject({
-            url: Functions_1.NHENTAI_API("galleries") +
-                Functions_1.QUERY(title ? title : query.toString(), metadata.sort, metadata.nextPage),
+            url: Functions_1.QUERY(encodeURI(title), metadata.sort ? metadata.sort : "popular", metadata.nextPage),
             method: "GET",
             headers: {
                 "accept-encoding": "application/json",
@@ -801,68 +797,77 @@ class NHentai extends paperback_extensions_common_1.Source {
         const response = await this.requestManager.schedule(request, 1);
         if (response.status > 400)
             throw new Error(`Failed to fetch data on ${methodName} with status code: ` +
-                response.status +
-                ". Request URL: " +
-                request.url);
+                `${response.status}. Request URL: ${request.url}`);
         const json = typeof response.data !== "object"
             ? JSON.parse(response.data)
             : response.data;
         if (!json)
             throw new Error(`Failed to parse response on ${methodName}`);
-        let cache = [];
-        json.result.forEach((result) => {
-            cache.push(createMangaTile({
-                id: result.id.toString(),
-                title: createIconText({ text: result.title.pretty }),
-                image: Functions_1.IMAGES(result.images, result.media_id, false)[0],
-            }));
-        });
-        // If the limit is reached, sets `nextPage` to undefined so line: 236-242 can catch it.
+        const cache = json.result.map((result) => createMangaTile({
+            id: result.id.toString(),
+            title: createIconText({ text: result.title.pretty }),
+            image: `https://t.nhentai.net/galleries/${result.media_id}/1t.${Functions_1.TYPE(result.images.thumbnail.t)}`,
+        }));
         if (metadata.nextPage === json.num_pages || json.num_pages === 0)
-            metadata = { nextPage: undefined, maxPages: json.num_pages };
+            metadata = {
+                nextPage: undefined,
+                maxPages: json.num_pages,
+                sort: metadata.sort,
+            };
         else
-            metadata = { nextPage: ++metadata.nextPage, maxPages: json.num_pages };
+            metadata = {
+                nextPage: ++metadata.nextPage,
+                maxPages: json.num_pages,
+                sort: metadata.sort,
+            };
         return createPagedResults({
             results: cache,
             metadata: metadata,
         });
     }
     async getHomePageSections(sectionCallback) {
-        var _a, _b;
-        let popular = createHomeSection({
-            id: "popular",
-            title: "Popular Now",
-        });
-        let newUploads = createHomeSection({
-            id: "new",
-            title: "New Uploads",
-            view_more: true,
-        });
+        const [popular, newUploads] = [
+            createHomeSection({
+                id: "popular",
+                title: "Popular Now",
+                view_more: false,
+            }),
+            createHomeSection({
+                id: "new",
+                title: "New Uploads",
+                view_more: true,
+            }),
+        ];
         sectionCallback(popular);
         sectionCallback(newUploads);
         const request = createRequestObject({
             url: `${Functions_1.NHENTAI_DOMAIN}`,
             method: "GET",
         });
-        let data = await this.requestManager.schedule(request, 1);
-        let popularHentai = [];
-        let newHentai = [];
-        let $ = this.cheerio.load(data.data);
+        const response = await this.requestManager.schedule(request, 1);
+        if (response.status > 400)
+            throw new Error(`Failed to fetch data on ${this.getHomePageSections.name} with status code: ` +
+                `${response.status}. Request URL: ${request.url}`);
+        const popularHentai = [];
+        const newHentai = [];
+        const $ = this.cheerio.load(response.data);
         let containerNode = $(".index-container").first();
-        for (let item of $(".gallery", containerNode).toArray()) {
-            let currNode = $(item);
-            let image = $("img", currNode).attr("data-src");
+        for (const item of $(".gallery", containerNode).toArray()) {
+            const currNode = $(item);
             // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
-            if (image == undefined) {
+            let image = $("img", currNode).attr("data-src");
+            if (image == undefined)
                 image = "http:" + $("img", currNode).attr("src");
-            }
             // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
-            let title = $(".caption", currNode).text();
-            title = title.replace(/(\[.+?\])/g, "").trim();
-            let idHref = (_a = $("a", currNode)
-                .attr("href")) === null || _a === void 0 ? void 0 : _a.match(/\/(\d*)\//);
+            const title = $(".caption", currNode)
+                .text()
+                .replace(/(\[.+?\])/g, "")
+                .trim();
+            const idHref = $("a", currNode)
+                .attr("href")
+                .match(/\/(\d*)\//)[1];
             popularHentai.push(createMangaTile({
-                id: idHref[1],
+                id: idHref,
                 title: createIconText({ text: title }),
                 image: image,
             }));
@@ -870,20 +875,22 @@ class NHentai extends paperback_extensions_common_1.Source {
         popular.items = popularHentai;
         sectionCallback(popular);
         containerNode = $(".index-container").last();
-        for (let item of $(".gallery", containerNode).toArray()) {
-            let currNode = $(item);
-            let image = $("img", currNode).attr("data-src");
+        for (const item of $(".gallery", containerNode).toArray()) {
+            const currNode = $(item);
             // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
-            if (image == undefined) {
+            let image = $("img", currNode).attr("data-src");
+            if (image == undefined)
                 image = "http:" + $("img", currNode).attr("src");
-            }
             // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
-            let title = $(".caption", currNode).text();
-            title = title.replace(/(\[.+?\])/g, "").trim();
-            let idHref = (_b = $("a", currNode)
-                .attr("href")) === null || _b === void 0 ? void 0 : _b.match(/\/(\d*)\//);
+            const title = $(".caption", currNode)
+                .text()
+                .replace(/(\[.+?\])/g, "")
+                .trim();
+            const idHref = $("a", currNode)
+                .attr("href")
+                .match(/\/(\d*)\//)[1];
             newHentai.push(createMangaTile({
-                id: idHref[1],
+                id: idHref,
                 title: createIconText({ text: title }),
                 image: image,
             }));
@@ -892,47 +899,51 @@ class NHentai extends paperback_extensions_common_1.Source {
         sectionCallback(newUploads);
     }
     async getViewMoreItems(homepageSectionId, metadata) {
-        var _a, _b;
-        metadata = metadata !== null && metadata !== void 0 ? metadata : {};
-        let page = (_a = metadata.page) !== null && _a !== void 0 ? _a : 1;
+        metadata = metadata !== null && metadata !== void 0 ? metadata : { nextPage: 1 };
+        if (homepageSectionId == undefined || metadata.nextPage === undefined)
+            return createPagedResults({ results: [], metadata });
         // This function only works for New Uploads, no need to check the section ID
         const request = createRequestObject({
-            url: `${Functions_1.NHENTAI_DOMAIN}/?page=${page}`,
+            url: `${Functions_1.NHENTAI_DOMAIN}/?page=${metadata.nextPage}`,
             method: "GET",
         });
-        let data = await this.requestManager.schedule(request, 1);
-        let $ = this.cheerio.load(data.data);
-        let discoveredObjects = [];
-        let containerNode = $(".index-container");
-        for (let item of $(".gallery", containerNode).toArray()) {
-            let currNode = $(item);
+        const data = await this.requestManager.schedule(request, 1);
+        const $ = this.cheerio.load(data.data);
+        const discoveredObjects = [];
+        const containerNode = $(".index-container");
+        for (const item of $(".gallery", containerNode).toArray()) {
+            const currNode = $(item);
             let image = $("img", currNode).attr("data-src");
             // If image is undefined, we've hit a lazyload part of the website. Adjust the scraping to target the other features
             if (image == undefined) {
                 image = "http:" + $("img", currNode).attr("src");
             }
             // Clean up the title by removing all metadata, these are items enclosed within [ ] brackets
-            let title = $(".caption", currNode).text();
-            title = title.replace(/(\[.+?\])/g, "").trim();
-            let idHref = (_b = $("a", currNode)
-                .attr("href")) === null || _b === void 0 ? void 0 : _b.match(/\/(\d*)\//);
+            const title = $(".caption", currNode)
+                .text()
+                .replace(/(\[.+?\])/g, "")
+                .trim();
+            const idHref = $("a", currNode)
+                .attr("href")
+                .match(/\/(\d*)\//)[1];
             discoveredObjects.push(createMangaTile({
-                id: idHref[1],
+                id: idHref,
                 title: createIconText({ text: title }),
                 image: image,
             }));
         }
         // Do we have any additional pages? If there is an `a.last` element, we do!
-        if ($("a.last")) {
-            metadata.page = ++page;
-        }
-        else {
-            metadata = undefined;
-        }
+        if ($("a.last"))
+            metadata.nextPage = ++metadata.nextPage;
+        else
+            metadata.nextPage = undefined;
         return createPagedResults({
             results: discoveredObjects,
             metadata: metadata,
         });
+    }
+    getMangaShareUrl(mangaId) {
+        return "https://nhentai.net/g/" + mangaId;
     }
 }
 exports.NHentai = NHentai;

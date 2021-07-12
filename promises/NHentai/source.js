@@ -620,7 +620,7 @@ exports.NHentai = exports.NHentaiInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Functions_1 = require("./Functions");
 exports.NHentaiInfo = {
-    version: "2.2.0",
+    version: "2.2.1",
     name: "nHentai",
     description: `Extension which pulls 18+ content from nHentai. (Literally all of it. We know why you're here)`,
     author: `VibrantClouds`,
@@ -717,7 +717,7 @@ class NHentai extends paperback_extensions_common_1.Source {
             status: 1,
             artist: artist.join(", "),
             author: artist.join(", "),
-            hentai: true,
+            hentai: false,
             tags: TagSections,
         });
     }

@@ -17,7 +17,7 @@ import {
   parseMangaDetails,
   parseMangaItems,
   parseSearchMangaItems,
-  parseTags
+  getTags
 } from "./SimplyHentaiParser"
 
 const SH_DOMAIN = 'https://www.simply-hentai.com';
@@ -123,7 +123,7 @@ export class SimplyHentai extends Source {
       param += `&query=${query.title}`;
     } else if(query.includedTags) {
       for(let i = 0; i < query.includedTags.length; i++) {
-        param += `&filter[tags][${i}]=${query.includedTags[i].label}`
+        param += `&filter[tags][${i}]=${query.includedTags[i].id}`
       }
     }
 
@@ -143,15 +143,7 @@ export class SimplyHentai extends Source {
   }
 
   async getSearchTags?(): Promise<TagSection[]> {
-    const request = createRequestObject({
-      url: encodeURI(`${API_URL}/tags?si=0&path=/tags/sort/popularity&locale=en&sort=popularity&limit=100&layout=list&object_count=10&type=tag`),
-      method: method
-    });
-
-    const response = await this.requestManager.schedule(request, 1);
-    const result = this.extractResultFromResponse(response)
-
-    return parseTags(result);
+    return getTags();
   }
   
   extractResultFromResponse = (response: any): any => {

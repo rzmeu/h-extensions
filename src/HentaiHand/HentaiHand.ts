@@ -6,10 +6,10 @@ import {
 } from 'paperback-extensions-common'
 import {Suwayomi} from "../Suwayomi";
 
-export const Hentai2ReadInfo: SourceInfo = {
+export const HentaiHandInfo: SourceInfo = {
   version: '0.1',
-  name: 'Hentai2Read',
-  description: `Extension that pulls manga from Hentai2Read`,
+  name: 'HentaiHand',
+  description: `Extension that pulls manga from HentaiHand`,
   author: 'rzmeu',
   authorWebsite: 'https://github.com/rzmeu',
   icon: 'icon.png',
@@ -23,9 +23,9 @@ export const Hentai2ReadInfo: SourceInfo = {
   ]
 };
 
-export class Hentai2Read extends Suwayomi {
+export class HentaiHand extends Suwayomi {
 
-  sourceId: string = "8314925449740051373";
+  sourceId: string = "1438773694780928937";
 
   languageCode: LanguageCode = LanguageCode.ENGLISH;
 

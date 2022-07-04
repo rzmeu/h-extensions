@@ -49,7 +49,6 @@ describe('ManhuaUS Tests', function () {
 
         let entry = data[0];
         expect(entry.id, "No ID present").to.not.be.empty;
-        expect(entry.time, "No date present").to.exist;
         expect(entry.name, "No title available").to.not.be.empty;
         expect(entry.chapNum, "No chapter number present").to.exist;
     });
@@ -90,26 +89,26 @@ describe('ManhuaUS Tests', function () {
         expect(data.title.text, "No title present").to.exist;
     });
 
-    it("Testing search by Tag", async () => {
-        const tag: Tag = {
-            id: 'sole-female',
-            label: 'sole female'
-        };
-
-        const searchRequest: SearchRequest = {
-            includedTags: [tag],
-            parameters: {}
-        };
-
-        let search = await wrapper.searchRequest(source, searchRequest, { nextPage: 1 });
-        let result = search.results[0];
-
-        expect(result, "No response from server").to.exist;
-        expect(result.id, "No ID found for search query").to.be.not.empty;
-        expect(result.image, "No image found for search").to.be.not.empty;
-        expect(result.title, "No title").to.be.not.null;
-        expect(result.subtitleText, "No subtitle text").to.be.not.null;
-    });
+    // it("Testing search by Tag", async () => {
+    //     const tag: Tag = {
+    //         id: 'sole-female',
+    //         label: 'sole female'
+    //     };
+    //
+    //     const searchRequest: SearchRequest = {
+    //         includedTags: [tag],
+    //         parameters: {}
+    //     };
+    //
+    //     let search = await wrapper.searchRequest(source, searchRequest, { nextPage: 1 });
+    //     let result = search.results[0];
+    //
+    //     expect(result, "No response from server").to.exist;
+    //     expect(result.id, "No ID found for search query").to.be.not.empty;
+    //     expect(result.image, "No image found for search").to.be.not.empty;
+    //     expect(result.title, "No title").to.be.not.null;
+    //     expect(result.subtitleText, "No subtitle text").to.be.not.null;
+    // });
 
     it("Testing search by Query", async () => {
         const searchRequest: SearchRequest = {

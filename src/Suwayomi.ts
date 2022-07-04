@@ -107,30 +107,21 @@ export abstract class Suwayomi extends Source {
 
   async searchRequest(query: SearchRequest, metadata: any): Promise<PagedResults> {
     let page: number = metadata?.nextPage || 1;
-    let param: string = `/search/complex?si=0&locale=en&page=${page}`;
 
-    if(query.title) {
-      param += `&query=${query.title}`;
-    } else if(query.includedTags) {
-      for(let i = 0; i < query.includedTags.length; i++) {
-        param += `&filter[tags][${i}]=${query.includedTags[i].id}`
-      }
-    }
+    const request = createRequestObject({
+      url: `${API_ENDPOINT}/source/${this.sourceId}/search?searchTerm=${query.title}&pageNum=${page}`,
+      method
+    });
 
-    // const request = createRequestObject({
-    //   url: this.baseUrl,
-    //   method: method,
-    //   param: encodeURI(param),
-    //   metadata: {nextPage: page + 1}
-    // });
-    //
-    // const response = await this.requestManager.schedule(request, 1);
+    const response = await this.requestManager.schedule(request, 1);
+
+    const nextPage = page + 1;
 
     return createPagedResults({
-      //results: parseSearchMangaItems(this.extractResultFromResponse(response)),
-      results: [],
-      metadata: {nextPage: page + 1}
+      results: parseMangaItems(this.extractResultFromResponse(response)),
+      metadata: {nextPage: nextPage}
     });
+
   }
 
   async getSearchTags?(): Promise<TagSection[]> {

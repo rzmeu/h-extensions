@@ -378,13 +378,13 @@ __exportStar(require("./RawData"), exports);
 },{"./Chapter":6,"./ChapterDetails":7,"./Constants":8,"./DynamicUI":24,"./HomeSection":25,"./Languages":26,"./Manga":27,"./MangaTile":28,"./MangaUpdate":29,"./PagedResults":30,"./RawData":31,"./RequestHeaders":32,"./RequestInterceptor":33,"./RequestManager":34,"./RequestObject":35,"./ResponseObject":36,"./SearchField":37,"./SearchRequest":38,"./SourceInfo":39,"./SourceManga":40,"./SourceStateManager":41,"./SourceTag":42,"./TagSection":43,"./TrackedManga":44,"./TrackedMangaChapterReadAction":45,"./TrackerActionQueue":46}],48:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Hentai2Read = exports.Hentai2ReadInfo = void 0;
+exports.HentaiFox = exports.HentaiFoxInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const Suwayomi_1 = require("../Suwayomi");
-exports.Hentai2ReadInfo = {
+exports.HentaiFoxInfo = {
     version: '0.1',
-    name: 'Hentai2Read',
-    description: `Extension that pulls manga from Hentai2Read`,
+    name: 'HentaiFox',
+    description: `Extension that pulls manga from HentaiFox`,
     author: 'rzmeu',
     authorWebsite: 'https://github.com/rzmeu',
     icon: 'icon.png',
@@ -397,16 +397,16 @@ exports.Hentai2ReadInfo = {
         }
     ]
 };
-class Hentai2Read extends Suwayomi_1.Suwayomi {
+class HentaiFox extends Suwayomi_1.Suwayomi {
     constructor() {
         super(...arguments);
-        this.sourceId = "8314925449740051373";
+        this.sourceId = "7945033982379409892";
         this.languageCode = paperback_extensions_common_1.LanguageCode.ENGLISH;
         this.isNsfw = true;
-        this.supportsLatest = true;
+        this.supportsLatest = false;
     }
 }
-exports.Hentai2Read = Hentai2Read;
+exports.HentaiFox = HentaiFox;
 
 },{"../Suwayomi":49,"paperback-extensions-common":5}],49:[function(require,module,exports){
 "use strict";
